@@ -14,10 +14,6 @@
 
 # gym-andr — Development Plan
 
-> **React Native · Expo · TypeScript · DDD · Clean Architecture**
-> Project path: `c:\DWP\github\gym-api\gym-andr`
-> IDE: WebStorm · Device: Pixel phone · Backend: Kiss Gym API (see `openapi.yaml`)
-
 ---
 
 ## Overview
@@ -260,6 +256,33 @@ adb install android/app/build/outputs/apk/debug/app-debug.apk
 ```bash
 npx expo install babel-plugin-module-resolver
 ```
+
+### Step 1.5 — Develop on WSL2 directly
+
+Hosting the project on the Windows NTFS filesystem (e.g., `C:\DWP\...`) causes filesystem events
+(inotify) to fail across the bridge protocol. Consequently, Metro cannot detect file changes
+for hot reloading.
+
+The solution is to move the project into the native WSL2 Linux filesystem.
+
+- **Create the project location** inside WSL2:
+    ```bash
+    mkdir -p ~/projects/gym-api
+    cp -r /mnt/c/DWP/github/gym-api/gym-andr ~/projects/gym-api/
+    ```
+- **Open the project from WSL2 path** in WebStorm:
+    WebStorm supports WSL2 paths directly. Use **File → Open** and navigate to:
+    `\\wsl$\Ubuntu\home\<yourname>\projects\gym-api\gym-andr`
+- **Run docker compose** from WSL2 terminal:
+    ```bash
+    cd ~/projects/gym-api/gym-andr
+    docker compose up expo
+    ```
+Now, saving `App.tsx` triggers an instant hot reload because Metro watches files natively within the Linux filesystem.
+
+**Why this works:**
+*   **BEFORE:** Windows NTFS → 9P bridge → WSL2 Linux → container =>INOTIFY BROKEN
+*   **AFTER:** WSL2 Linux filesystem → container => INOTIFY WORKS
 
 ---
 
