@@ -1,0 +1,29 @@
+services:
+  expo:
+    image: node:lts-slim
+    working_dir: /app
+    volumes:
+      - .:/app
+    ports:
+      - "8081:8081"
+      - "19000:19000"
+    environment:
+      - EXPO_DEVTOOLS_LISTEN_ADDRESS=0.0.0.0
+      - REACT_NATIVE_PACKAGER_HOSTNAME=192.168.0.164   # ← your LAN IP
+      - EXPO_NO_DEVTOOLS=1
+    tty: true
+    stdin_open: true
+    command: /bin/sh -c "npm install && npx --yes expo start --lan --dev-client"
+
+  gradle:
+    image: reactnativecommunity/react-native-android
+    working_dir: /app/android
+    volumes:
+      - .:/app:z
+      - gradle-cache:/root/.gradle
+      - android-sdk-cache:/opt/android-sdk
+    command: tail -f /dev/null
+
+volumes:
+  gradle-cache:
+  android-sdk-cache:
