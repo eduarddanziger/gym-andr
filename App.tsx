@@ -1,20 +1,14 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+// App.tsx — temporary smoke test, replace in Phase 5
+import { View, Text } from 'react-native';
+import { serviceLocator } from '@src/ServiceLocator';
 
 export default function App() {
+  // If ServiceLocator instantiates without throwing, all imports resolved correctly
+  console.log('ServiceLocator ready:', Object.keys(serviceLocator));
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <Text>gym-andr — DDD scaffold OK</Text>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
