@@ -1,14 +1,28 @@
-// App.tsx — temporary smoke test, replace in Phase 5
-import { View, Text } from 'react-native';
-import { serviceLocator } from '@src/ServiceLocator';
+import { AuthProvider, useAuth } from '@presentation/context/AuthContext';
+import { LoginScreen } from '@presentation/screens/LoginScreen';
+import { StatusBar } from 'expo-status-bar';
+import React from 'react';
+import { Text, View } from 'react-native';
 
-export default function App() {
-  // If ServiceLocator instantiates without throwing, all imports resolved correctly
-  console.log('ServiceLocator ready:', Object.keys(serviceLocator));
+const AppInner: React.FC = () => {
+  const { user } = useAuth();
 
+  if (user) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{ fontSize: 18 }}>✅ Logged in as {user.name}</Text>
+      </View>
+    );
+  }
+
+  return <LoginScreen onLoginSuccess={() => {}} />;
+};
+
+export default function App(): React.ReactElement {
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <Text>gym-andr — DDD scaffold OK</Text>
-    </View>
+    <AuthProvider>
+      <StatusBar style="auto" />
+      <AppInner />
+    </AuthProvider>
   );
 }
