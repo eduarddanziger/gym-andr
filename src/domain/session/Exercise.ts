@@ -14,3 +14,8 @@ export interface Exercise {
 }
 
 // Derive elapsed seconds for a running exercise (UI timer)
+export const elapsedSeconds = (exercise: Exercise): number => {
+  if (!exercise.startedAt) return 0;
+  const end = exercise.realEndAt ?? new Date();
+  return Math.floor((end.getTime() - exercise.startedAt.getTime()) / 1000);
+};

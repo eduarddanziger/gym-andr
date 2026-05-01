@@ -1,7 +1,5 @@
 import { Exercise } from './Exercise';
-import { isRunning } from './ExerciseStatus';
-
-// Value Object — no framework deps, plain TypeScript
+import { isFinished, isPending, isRunning } from './ExerciseStatus';
 
 export type SessionStatus = 'Active' | 'Finished';
 
@@ -24,10 +22,10 @@ export const runningExercise = (session: Session): Exercise | undefined =>
   session.exercises.find(e => isRunning(e.status));
 
 export const pendingExercises = (session: Session): Exercise[] =>
-  session.exercises.filter(e => isRunning(e.status));
+  session.exercises.filter(e => isPending(e.status));
 
 export const finishedExercises = (session: Session): Exercise[] =>
-  session.exercises.filter(e => isRunning(e.status));
+  session.exercises.filter(e => isFinished(e.status));
 
 export const durationSeconds = (session: Session): number => {
   const end = session.finishedAt ?? new Date();

@@ -38,6 +38,10 @@ export const serviceLocator = {
   register: new RegisterUseCase(userRepo),
   getCurrentUser: new GetCurrentUserUseCase(userRepo),
 
-  // Expose repo for static helpers (SecureStore restore/clear)
-  userRepo,
+  // Auth persistence helpers — keeps Presentation away from Infrastructure
+  restoreUserId: (): Promise<string | null> =>
+    useMock ? Promise.resolve(null) : HttpUserRepository.restoreUserId(),
+
+  clearUserId: (): Promise<void> =>
+    useMock ? Promise.resolve() : HttpUserRepository.clearUserId(),
 } as const;

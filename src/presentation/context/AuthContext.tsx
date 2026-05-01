@@ -1,7 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { User } from '@domain/user/User';
 import { serviceLocator } from '@src/ServiceLocator';
-import { HttpUserRepository } from '@infrastructure/user/HttpUserRepository';
 
 interface AuthState {
   user: User | null;
@@ -28,7 +27,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const restore = async (): Promise<void> => {
       try {
-        const userId = await HttpUserRepository.restoreUserId();
+        const userId = await serviceLocator.restoreUserId(); // ← changed
         if (userId) {
           const user = await serviceLocator.getCurrentUser.execute();
           setState({ user, isLoading: false, error: null });
@@ -36,8 +35,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setState(s => ({ ...s, isLoading: false }));
         }
       } catch {
-        // Token stale or server unreachable — treat as logged out
-        await HttpUserRepository.clearUserId();
+        await serviceLocator.clearUserId();
         setState({ user: null, isLoading: false, error: null });
       }
     };
@@ -67,7 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const logout = useCallback(async (): Promise<void> => {
-    await HttpUserRepository.clearUserId();
+    await serviceLocator.clearUserId();
     setState({ user: null, isLoading: false, error: null });
   }, []);
 
