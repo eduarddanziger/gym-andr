@@ -41,6 +41,12 @@ export class HttpSessionRepository implements ISessionRepository {
     return mapSession(raw);
   }
 
+  async deleteSession(sessionId: string): Promise<void> {
+    await apiRequest<void>(`/api/sessions/${sessionId}`, {
+      method: 'DELETE',
+    });
+  }
+
   async finish(sessionId: string): Promise<Session> {
     const raw = await apiRequest<Record<string, unknown>>(`/api/sessions/${sessionId}/finish`, {
       method: 'POST',

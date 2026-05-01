@@ -45,6 +45,12 @@ export class InMemorySessionRepository implements ISessionRepository {
     return session;
   }
 
+  async deleteSession(sessionId: string): Promise<void> {
+    if (!this.sessions.has(sessionId)) {
+      throw new Error(`Session ${sessionId} not found`);
+    }
+    this.sessions.delete(sessionId);
+  }
   async finish(sessionId: string): Promise<Session> {
     const session = await this.getById(sessionId);
     // Auto-finish any running exercise first

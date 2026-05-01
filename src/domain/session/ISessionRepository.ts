@@ -15,6 +15,7 @@ export interface AddExerciseInput {
 export interface ISessionRepository {
   create(userId: string, inheritFromSessionId?: string): Promise<Session>;
   getById(sessionId: string): Promise<Session>;
+  deleteSession(sessionId: string): Promise<void>;
   finish(sessionId: string): Promise<Session>;
   addExercise(sessionId: string, input: AddExerciseInput): Promise<Exercise>;
   startExercise(sessionId: string, exerciseId: string, maxEndAt?: Date): Promise<Exercise>;

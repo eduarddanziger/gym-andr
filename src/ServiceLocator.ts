@@ -5,6 +5,7 @@ import { HttpSessionRepository } from '@infrastructure/session/HttpSessionReposi
 import { HttpUserRepository } from '@infrastructure/user/HttpUserRepository';
 import { InMemorySessionRepository } from '@infrastructure/session/InMemorySessionRepository';
 import { InMemoryUserRepository } from '@infrastructure/user/InMemoryUserRepository';
+import { DeleteSessionUseCase } from '@application/session/DeleteSessionUseCase';
 
 import { CreateSessionUseCase } from '@application/session/CreateSessionUseCase';
 import { InheritSessionUseCase } from '@application/session/InheritSessionUseCase';
@@ -27,6 +28,7 @@ export const serviceLocator = {
   // Session use cases
   createSession: new CreateSessionUseCase(sessionRepo),
   inheritSession: new InheritSessionUseCase(sessionRepo),
+  deleteSession: new DeleteSessionUseCase(sessionRepo),
   addExercise: new AddExerciseUseCase(sessionRepo),
   startExercise: new StartExerciseUseCase(sessionRepo),
   finishExercise: new FinishExerciseUseCase(sessionRepo),
