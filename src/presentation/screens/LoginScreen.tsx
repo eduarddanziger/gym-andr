@@ -1,99 +1,83 @@
 import React, { useState } from 'react';
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
 import { useAuth } from '@presentation/context/AuthContext';
-import { useTheme } from '@presentation/theme';
+import { AppTheme, useTheme } from '@presentation/theme';
+import {
+  AuthError,
+  AuthField,
+  AuthWordmark,
+  GhostButton,
+  PrimaryButton,
+} from '@presentation/components/AuthComponents';
+import { LoginScreenProps } from '@presentation/navigation/types';
 
-// Navigation — typed once React Navigation is wired in RootNavigator
-// For now uses a callback prop so the screen is testable standalone
-export interface LoginScreenProps {
-  onLoginSuccess: () => void;
-}
+// Single Responsibility: this screen owns login flow only.
+// Registration → RegisterScreen (navigate via stack).
+// Supabase migration: only LoginUseCase changes, this screen stays as-is.
 
-export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
+export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const theme = useTheme();
   const { login, isLoading, error } = useAuth();
   const [email, setEmail] = useState('');
 
-  const styles = makeStyles(theme);
+  const s = styles(theme);
+
+  const canSubmit = email.trim().length > 0 && !isLoading;
 
   const handleLogin = async (): Promise<void> => {
-    if (!email.trim()) return;
+    if (!canSubmit) return;
     try {
       await login(email.trim());
-      onLoginSuccess();
+      // Navigation to SessionHub is handled by RootNavigator auth guard —
+      // once user is set in AuthContext, navigator re-renders automatically.
     } catch {
-      // error is already in AuthContext state — displayed below
+      // error state is in AuthContext — displayed by AuthError below
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.root}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <View style={styles.inner}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.wordmark}>KISS GYM</Text>
-          <Text style={styles.tagline}>track. lift. repeat.</Text>
-        </View>
+    <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <View style={s.inner}>
+        <AuthWordmark theme={theme} subtitle="track. lift. repeat." />
 
-        {/* Form */}
-        <View style={styles.form}>
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            style={styles.input}
+        <View style={s.form}>
+          <AuthField
+            label="Email"
+            theme={theme}
             value={email}
             onChangeText={setEmail}
             placeholder="you@example.com"
-            placeholderTextColor={theme.textMuted}
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
             autoFocus
-            onSubmitEditing={handleLogin}
             returnKeyType="go"
+            onSubmitEditing={handleLogin}
             editable={!isLoading}
           />
 
-          {/* Error */}
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+          <AuthError message={error} theme={theme} />
 
-          {/* Login button */}
-          <Pressable
-            style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+          <PrimaryButton
+            label="Log in"
             onPress={handleLogin}
-            disabled={isLoading || !email.trim()}
-          >
-            {isLoading ? (
-              <ActivityIndicator color={styles.buttonText.color} />
-            ) : (
-              <Text style={styles.buttonText}>Log in</Text>
-            )}
-          </Pressable>
+            isLoading={isLoading}
+            disabled={!canSubmit}
+            theme={theme}
+          />
         </View>
 
-        {/* Footer hint */}
-        <Text style={styles.footer}>No account yet? Just log in — one will be created.</Text>
+        <GhostButton
+          label="No account yet? Register"
+          onPress={() => navigation.navigate('Register')}
+          theme={theme}
+        />
       </View>
     </KeyboardAvoidingView>
   );
 };
 
-// ── Styles ────────────────────────────────────────────────────────────────────
-
-const makeStyles = (
-  theme: ReturnType<typeof import('@presentation/theme').useTheme>,
-): ReturnType<typeof StyleSheet.create> =>
+const styles = (theme: AppTheme): ReturnType<typeof StyleSheet.create> =>
   StyleSheet.create({
     root: {
       flex: 1,
@@ -105,69 +89,7 @@ const makeStyles = (
       justifyContent: 'center',
       gap: 32,
     },
-    header: {
-      gap: 6,
-    },
-    wordmark: {
-      fontSize: 42,
-      fontWeight: '800',
-      letterSpacing: 6,
-      color: theme.accent,
-    },
-    tagline: {
-      fontSize: 13,
-      letterSpacing: 2,
-      color: theme.textSecondary,
-      textTransform: 'uppercase',
-    },
     form: {
-      gap: 10,
-    },
-    label: {
-      fontSize: 12,
-      fontWeight: '600',
-      letterSpacing: 1,
-      textTransform: 'uppercase',
-      color: theme.textSecondary,
-      marginBottom: 2,
-    },
-    input: {
-      height: 52,
-      backgroundColor: theme.surface,
-      borderWidth: 1,
-      borderColor: theme.border,
-      borderRadius: 10,
-      paddingHorizontal: 16,
-      fontSize: 16,
-      color: theme.textPrimary,
-    },
-    error: {
-      fontSize: 13,
-      color: theme.danger,
-      marginTop: 2,
-    },
-    button: {
-      height: 54,
-      backgroundColor: theme.accent,
-      borderRadius: 10,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginTop: 8,
-    },
-    buttonPressed: {
-      opacity: 0.85,
-      transform: [{ scale: 0.98 }],
-    },
-    buttonText: {
-      fontSize: 16,
-      fontWeight: '700',
-      color: '#0E0E0F', // always dark — accent is bright on both schemes
-      letterSpacing: 0.5,
-    },
-    footer: {
-      fontSize: 13,
-      color: theme.textMuted,
-      textAlign: 'center',
-      lineHeight: 20,
+      gap: 12,
     },
   });

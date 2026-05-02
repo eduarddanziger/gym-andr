@@ -1,18 +1,66 @@
-// TODO Phase 5 — RootNavigator
-// Stack: Login → SessionHub → ActiveSession → SessionFinished
-// Auth guard: redirect to Login if useAuth().user === null
-// Install first: npx expo install @react-navigation/native @react-navigation/native-stack
-//               npx expo install react-native-screens react-native-safe-area-context
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useAuth } from '@presentation/context/AuthContext';
+import { useTheme } from '@presentation/theme';
+import { LoginScreen } from '@presentation/screens/LoginScreen';
+import { RegisterScreen } from '@presentation/screens/RegisterScreen';
+import { SessionHubScreen } from '@presentation/screens/SessionHubScreen';
+import { ActiveSessionScreen } from '@presentation/screens/ActiveSessionScreen';
+import { SessionFinishedScreen } from '@presentation/screens/SessionFinishedScreen';
+import { RootStackParamList } from './types';
 
-export const RootNavigator: React.FC = () => (
-  <View style={styles.container}>
-    <Text style={styles.label}>RootNavigator — Phase 5</Text>
-  </View>
-);
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
-const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  label: { fontSize: 18, color: '#888' },
-});
+// Auth guard lives here — screens never check auth state themselves.
+// When user logs in → AuthContext updates → navigator re-renders → app stack shown.
+// When user logs out → auth stack shown automatically.
+
+export const RootNavigator: React.FC = () => {
+  const { user, isLoading } = useAuth();
+  const theme = useTheme();
+
+  // Splash — restore from SecureStore on startup
+  if (isLoading) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: theme.background,
+        }}
+      >
+        <ActivityIndicator color={theme.accent} size="large" />
+      </View>
+    );
+  }
+
+  return (
+    <NavigationContainer>
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false, // all screens are full-bleed
+          contentStyle: { backgroundColor: theme.background },
+          animation: 'slide_from_right',
+        }}
+      >
+        {user === null ? (
+          // ── Auth stack (unauthenticated) ──────────────────────────────────
+          <>
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Register" component={RegisterScreen} />
+          </>
+        ) : (
+          // ── App stack (authenticated) ─────────────────────────────────────
+          <>
+            <Stack.Screen name="SessionHub" component={SessionHubScreen} />
+            <Stack.Screen name="ActiveSession" component={ActiveSessionScreen} />
+            <Stack.Screen name="SessionFinished" component={SessionFinishedScreen} />
+          </>
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+};

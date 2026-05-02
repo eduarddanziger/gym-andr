@@ -1,13 +1,11 @@
-// src/presentation/theme.ts
 import { useColorScheme } from 'react-native';
 
-// Palette
-const palette = {
-  // Accent — electric lime: high-energy, gym-appropriate, works on both dark and light
-  accent: '#C6F135',
-  accentDark: '#9BBF1A',
+// ── Palette ───────────────────────────────────────────────────────────────────
 
-  // Dark scheme
+const palette = {
+  // Accent — electric lime: high-energy, gym-appropriate, readable on both schemes
+  accent: '#C6F135',
+
   dark: {
     background: '#0E0E0F',
     surface: '#1A1A1C',
@@ -18,7 +16,6 @@ const palette = {
     danger: '#FF4C4C',
   },
 
-  // Light scheme
   light: {
     background: '#F6F6F7',
     surface: '#FFFFFF',
@@ -30,6 +27,9 @@ const palette = {
   },
 } as const;
 
+// ── AppTheme interface ────────────────────────────────────────────────────────
+// Uses string — not literal hex types — so both dark and light palettes satisfy it.
+
 export interface AppTheme {
   background: string;
   surface: string;
@@ -38,16 +38,19 @@ export interface AppTheme {
   textSecondary: string;
   textMuted: string;
   danger: string;
-  isDark: boolean;
   accent: string;
+  isDark: boolean;
 }
+
+// ── useTheme hook ─────────────────────────────────────────────────────────────
 
 export const useTheme = (): AppTheme => {
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
+  const colors = isDark ? palette.dark : palette.light;
   return {
-    ...(isDark ? palette.dark : palette.light),
-    isDark,
+    ...colors,
     accent: palette.accent,
+    isDark,
   };
 };

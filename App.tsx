@@ -1,28 +1,18 @@
-import { AuthProvider, useAuth } from '@presentation/context/AuthContext';
-import { LoginScreen } from '@presentation/screens/LoginScreen';
-import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { Text, View } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { AuthProvider } from '@presentation/context/AuthContext';
+import { SessionProvider } from '@presentation/context/SessionContext';
+import { RootNavigator } from '@presentation/navigation/RootNavigator';
 
-const AppInner: React.FC = () => {
-  const { user } = useAuth();
-
-  if (user) {
-    return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ fontSize: 18 }}>✅ Logged in as {user.name}</Text>
-      </View>
-    );
-  }
-
-  return <LoginScreen onLoginSuccess={() => {}} />;
-};
-
+// Provider order matters:
+// AuthProvider must wrap SessionProvider — SessionContext reads useAuth()
 export default function App(): React.ReactElement {
   return (
     <AuthProvider>
-      <StatusBar style="auto" />
-      <AppInner />
+      <SessionProvider>
+        <StatusBar style="auto" />
+        <RootNavigator />
+      </SessionProvider>
     </AuthProvider>
   );
 }

@@ -9,6 +9,14 @@ export class RegisterUseCase {
     const trimmedName = name.trim();
     if (!trimmedEmail) throw new Error('Email is required');
     if (!trimmedName) throw new Error('Name is required');
-    return this.userRepo.register(trimmedEmail, trimmedName);
+    try {
+      return this.userRepo.register(trimmedEmail, trimmedName);
+    } catch (e) {
+      const msg = (e as Error).message;
+      if (msg.includes('400') || msg.toLowerCase().includes('bad request')) {
+        throw new Error('This email is already registered. Try logging in instead.');
+      }
+      throw e;
+    }
   }
 }

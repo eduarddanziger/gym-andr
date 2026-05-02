@@ -9,6 +9,14 @@ export class LoginUseCase {
   async execute(email: string): Promise<User> {
     const trimmed = email.trim().toLowerCase();
     if (!trimmed) throw new Error('Email is required');
-    return this.userRepo.login(trimmed);
+    try {
+      return await this.userRepo.login(trimmed);
+    } catch (e) {
+      const msg = (e as Error).message;
+      if (msg.includes('404') || msg.toLowerCase().includes('not found')) {
+        throw new Error('No account found. Please register.');
+      }
+      throw e;
+    }
   }
 }
