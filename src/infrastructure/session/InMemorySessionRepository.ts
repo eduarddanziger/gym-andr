@@ -1,6 +1,11 @@
-import { AddExerciseInput, ISessionRepository } from '@domain/session/ISessionRepository';
+import {
+  AddExerciseInput,
+  GetSessionsQuery,
+  ISessionRepository,
+} from '@domain/session/ISessionRepository';
 import { Exercise } from '@domain/session/Exercise';
 import { Session } from '@domain/session/Session';
+import { PagedResponse } from '@domain/PagedResponse';
 
 // Offline mock — swap in via ServiceLocator when EXPO_PUBLIC_USE_MOCK=true.
 // Mirrors server business rules: running exercise is auto-finished when a new one starts.
@@ -51,9 +56,41 @@ export class InMemorySessionRepository implements ISessionRepository {
     }
     this.sessions.delete(sessionId);
   }
+
+  async getActive(userId: string): Promise<Session | null> {
+    const active = [...this.sessions.values()].find(
+      s => s.userId === userId && s.status === 'Active',
+    );
+    return active ?? null;
+  }
+
+  async getSessions(query: GetSessionsQuery): Promise<PagedResponse<Session>> {
+    let all = [...this.sessions.values()];
+
+    // Filter
+    if (query.userId) all = all.filter(s => s.userId === query.userId);
+    if (query.status) all = all.filter(s => s.status === query.status);
+
+    // Sort — default finishedAt:desc
+    const [prop, dir] = (query.sort ?? 'finishedAt:desc').split(':');
+    all.sort((a, b) => {
+      const aVal = prop === 'finishedAt' ? (a.finishedAt?.getTime() ?? 0) : a.createdAt.getTime();
+      const bVal = prop === 'finishedAt' ? (b.finishedAt?.getTime() ?? 0) : b.createdAt.getTime();
+      return dir === 'asc' ? aVal - bVal : bVal - aVal;
+    });
+
+    // Paginate — page is 1-based (matching server default)
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? 10;
+    const totalCount = all.length;
+    const totalPages = Math.ceil(totalCount / pageSize);
+    const items = all.slice((page - 1) * pageSize, page * pageSize);
+
+    return { items, page, pageSize, totalCount, totalPages };
+  }
+
   async finish(sessionId: string): Promise<Session> {
     const session = await this.getById(sessionId);
-    // Auto-finish any running exercise first
     const exercises = session.exercises.map(e =>
       e.status === 'Running' ? { ...e, status: 'Finished' as const, realEndAt: now() } : e,
     );
@@ -64,7 +101,6 @@ export class InMemorySessionRepository implements ISessionRepository {
 
   async addExercise(sessionId: string, input: AddExerciseInput): Promise<Exercise> {
     const session = await this.getById(sessionId);
-    // Auto-finish any running exercise
     const exercises = session.exercises.map(e =>
       e.status === 'Running' ? { ...e, status: 'Finished' as const, realEndAt: now() } : e,
     );

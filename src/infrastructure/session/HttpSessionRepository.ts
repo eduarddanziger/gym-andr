@@ -1,7 +1,12 @@
 import { apiRequest } from '@infrastructure/api/ApiClient';
-import { AddExerciseInput, ISessionRepository } from '@domain/session/ISessionRepository';
+import {
+  AddExerciseInput,
+  GetSessionsQuery,
+  ISessionRepository,
+} from '@domain/session/ISessionRepository';
 import { Exercise } from '@domain/session/Exercise';
 import { Session } from '@domain/session/Session';
+import { PagedResponse } from '@domain/PagedResponse';
 
 // Maps raw API responses to domain entities.
 // The server returns ISO strings for dates — we convert to Date objects here.
@@ -27,6 +32,13 @@ const mapSession = (raw: Record<string, unknown>): Session => ({
   exercises: ((raw['exercises'] as Record<string, unknown>[]) ?? []).map(mapExercise),
 });
 
+// Build query string from an object — omits undefined values
+const toQueryString = (params: Record<string, string | number | undefined>): string => {
+  const entries = Object.entries(params).filter(([, v]) => v !== undefined);
+  if (entries.length === 0) return '';
+  return '?' + entries.map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`).join('&');
+};
+
 export class HttpSessionRepository implements ISessionRepository {
   async create(userId: string, inheritFromSessionId?: string): Promise<Session> {
     const raw = await apiRequest<Record<string, unknown>>('/api/sessions', {
@@ -42,28 +54,63 @@ export class HttpSessionRepository implements ISessionRepository {
   }
 
   async deleteSession(sessionId: string): Promise<void> {
-    await apiRequest<void>(`/api/sessions/${sessionId}`, {
-      method: 'DELETE',
-    });
+    await apiRequest<void>(`/api/sessions/${sessionId}`, { method: 'DELETE' });
   }
 
   async finish(sessionId: string): Promise<Session> {
-    const raw = await apiRequest<Record<string, unknown>>(`/api/sessions/${sessionId}/finish`, {
-      method: 'POST',
-    });
+    const raw = await apiRequest<Record<string, unknown>>(
+      `/api/sessions/${sessionId}/finish`,
+      { method: 'POST' },
+    );
     return mapSession(raw);
   }
 
-  async addExercise(sessionId: string, input: AddExerciseInput): Promise<Exercise> {
-    const raw = await apiRequest<Record<string, unknown>>(`/api/sessions/${sessionId}/exercises`, {
-      method: 'POST',
-      body: JSON.stringify({
-        autoLabel: input.autoLabel,
-        photoUrl: input.photoUrl,
-        maxEndAt: input.maxEndAt?.toISOString(),
-        properties: input.properties,
-      }),
+  async getActive(userId: string): Promise<Session | null> {
+    const qs = toQueryString({ userId, page: 1, pageSize: 1 });
+    const raw = await apiRequest<{ items?: Record<string, unknown>[] }>(
+      `/api/sessions/active${qs}`,
+    );
+    const first = raw.items?.[0];
+    return first ? mapSession(first) : null;
+  }
+
+  async getSessions(query: GetSessionsQuery): Promise<PagedResponse<Session>> {
+    const qs = toQueryString({
+      userId: query.userId,
+      status: query.status,
+      sort: query.sort,
+      page: query.page,
+      pageSize: query.pageSize,
     });
+    const raw = await apiRequest<{
+      items: Record<string, unknown>[];
+      page: number;
+      pageSize: number;
+      totalCount: number;
+      totalPages: number;
+    }>(`/api/sessions${qs}`);
+    return {
+      items: (raw.items ?? []).map(mapSession),
+      page: raw.page,
+      pageSize: raw.pageSize,
+      totalCount: raw.totalCount,
+      totalPages: raw.totalPages,
+    };
+  }
+
+  async addExercise(sessionId: string, input: AddExerciseInput): Promise<Exercise> {
+    const raw = await apiRequest<Record<string, unknown>>(
+      `/api/sessions/${sessionId}/exercises`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          autoLabel: input.autoLabel,
+          photoUrl: input.photoUrl,
+          maxEndAt: input.maxEndAt?.toISOString(),
+          properties: input.properties,
+        }),
+      },
+    );
     return mapExercise(raw);
   }
 
