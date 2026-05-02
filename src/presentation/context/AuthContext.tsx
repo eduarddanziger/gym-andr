@@ -43,13 +43,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = useCallback(async (email: string): Promise<void> => {
-    setState(s => ({ ...s, isLoading: true, error: null }));
+    setState(s => ({ ...s, error: null }));
     try {
       const user = await serviceLocator.login.execute(email);
       setState({ user, isLoading: false, error: null });
     } catch (e) {
-      setState(s => ({ ...s, isLoading: false, error: (e as Error).message }));
-      throw e;
+      setState(s => ({ ...s, error: (e as Error).message }));
     }
   }, []);
 
