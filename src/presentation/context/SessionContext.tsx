@@ -96,16 +96,15 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [state, dispatch] = useReducer(sessionReducer, initialState);
   const { user } = useAuth();
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const requireSession = (): Session => {
+  const requireSession = useCallback((): Session => {
     if (!state.currentSession) throw new Error('No active session');
     return state.currentSession;
-  };
+  }, [state.currentSession]);
 
-  const requireUser = (): string => {
+  const requireUser = useCallback((): string => {
     if (!user) throw new Error('Not authenticated');
     return user.id;
-  };
+  }, [user]);
 
   const startNewSession = useCallback(async (): Promise<Session> => {
     dispatch({ type: 'LOADING' });
@@ -117,8 +116,7 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
       dispatch({ type: 'ERROR', payload: (e as Error).message });
       throw e;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [requireUser]);
 
   const inheritLastSession = useCallback(
     async (inheritFromSessionId: string): Promise<Session> => {
@@ -214,8 +212,7 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
       dispatch({ type: 'ERROR', payload: (e as Error).message });
       throw e;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.currentSession]);
+  }, [requireSession]);
 
   const resetSession = useCallback(() => dispatch({ type: 'RESET' }), []);
 
