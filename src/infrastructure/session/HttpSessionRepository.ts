@@ -58,10 +58,9 @@ export class HttpSessionRepository implements ISessionRepository {
   }
 
   async finish(sessionId: string): Promise<Session> {
-    const raw = await apiRequest<Record<string, unknown>>(
-      `/api/sessions/${sessionId}/finish`,
-      { method: 'POST' },
-    );
+    const raw = await apiRequest<Record<string, unknown>>(`/api/sessions/${sessionId}/finish`, {
+      method: 'POST',
+    });
     return mapSession(raw);
   }
 
@@ -99,18 +98,15 @@ export class HttpSessionRepository implements ISessionRepository {
   }
 
   async addExercise(sessionId: string, input: AddExerciseInput): Promise<Exercise> {
-    const raw = await apiRequest<Record<string, unknown>>(
-      `/api/sessions/${sessionId}/exercises`,
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          autoLabel: input.autoLabel,
-          photoUrl: input.photoUrl,
-          maxEndAt: input.maxEndAt?.toISOString(),
-          properties: input.properties,
-        }),
-      },
-    );
+    const raw = await apiRequest<Record<string, unknown>>(`/api/sessions/${sessionId}/exercises`, {
+      method: 'POST',
+      body: JSON.stringify({
+        autoLabel: input.autoLabel,
+        photoUrl: input.photoUrl,
+        maxEndAt: input.maxEndAt?.toISOString(),
+        properties: input.properties,
+      }),
+    });
     return mapExercise(raw);
   }
 
