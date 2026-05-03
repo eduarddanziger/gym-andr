@@ -8,20 +8,16 @@ import { LoginScreen } from '@presentation/screens/LoginScreen';
 import { RegisterScreen } from '@presentation/screens/RegisterScreen';
 import { SessionHubScreen } from '@presentation/screens/SessionHubScreen';
 import { ActiveSessionScreen } from '@presentation/screens/ActiveSessionScreen';
+import { SessionDetailScreen } from '@presentation/screens/SessionDetailScreen';
 import { SessionFinishedScreen } from '@presentation/screens/SessionFinishedScreen';
 import { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-// Auth guard lives here — screens never check auth state themselves.
-// When user logs in → AuthContext updates → navigator re-renders → app stack shown.
-// When user logs out → auth stack shown automatically.
-
 export const RootNavigator: React.FC = () => {
   const { user, isLoading } = useAuth();
   const theme = useTheme();
 
-  // Splash — restore from SecureStore on startup
   if (isLoading) {
     return (
       <View
@@ -41,22 +37,21 @@ export const RootNavigator: React.FC = () => {
     <NavigationContainer>
       <Stack.Navigator
         screenOptions={{
-          headerShown: false, // all screens are full-bleed
+          headerShown: false,
           contentStyle: { backgroundColor: theme.background },
           animation: 'slide_from_right',
         }}
       >
         {user === null ? (
-          // ── Auth stack (unauthenticated) ──────────────────────────────────
           <>
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
           </>
         ) : (
-          // ── App stack (authenticated) ─────────────────────────────────────
           <>
             <Stack.Screen name="SessionHub" component={SessionHubScreen} />
             <Stack.Screen name="ActiveSession" component={ActiveSessionScreen} />
+            <Stack.Screen name="SessionDetail" component={SessionDetailScreen} />
             <Stack.Screen name="SessionFinished" component={SessionFinishedScreen} />
           </>
         )}

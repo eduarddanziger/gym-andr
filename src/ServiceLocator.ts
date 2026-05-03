@@ -17,6 +17,7 @@ import { DeleteExerciseUseCase } from '@application/session/DeleteExerciseUseCas
 import { FinishSessionUseCase } from '@application/session/FinishSessionUseCase';
 import { GetActiveSessionUseCase } from '@application/session/GetActiveSessionUseCase';
 import { GetLastFinishedSessionUseCase } from '@application/session/GetLastFinishedSessionUseCase';
+import { GetSessionsUseCase } from '@application/session/GetSessionsUseCase';
 import { LoginUseCase } from '@application/user/LoginUseCase';
 import { RegisterUseCase } from '@application/user/RegisterUseCase';
 import { GetCurrentUserUseCase } from '@application/user/GetCurrentUserUseCase';
@@ -39,6 +40,7 @@ export const serviceLocator = {
   finishSession: new FinishSessionUseCase(sessionRepo),
   getActiveSession: new GetActiveSessionUseCase(sessionRepo),
   getLastFinishedSession: new GetLastFinishedSessionUseCase(sessionRepo),
+  getSessions: new GetSessionsUseCase(sessionRepo),
 
   // User use cases
   login: new LoginUseCase(userRepo),
