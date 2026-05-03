@@ -18,6 +18,7 @@ import { FinishSessionUseCase } from '@application/session/FinishSessionUseCase'
 import { GetActiveSessionUseCase } from '@application/session/GetActiveSessionUseCase';
 import { GetLastFinishedSessionUseCase } from '@application/session/GetLastFinishedSessionUseCase';
 import { GetSessionsUseCase } from '@application/session/GetSessionsUseCase';
+import { GetSessionByIdUseCase } from '@application/session/GetSessionByIdUseCase';
 import { LoginUseCase } from '@application/user/LoginUseCase';
 import { RegisterUseCase } from '@application/user/RegisterUseCase';
 import { GetCurrentUserUseCase } from '@application/user/GetCurrentUserUseCase';
@@ -33,6 +34,7 @@ export const serviceLocator = {
   inheritSession: new InheritSessionUseCase(sessionRepo),
   renameSession: new RenameSessionUseCase(sessionRepo),
   deleteSession: new DeleteSessionUseCase(sessionRepo),
+  getSessionById: new GetSessionByIdUseCase(sessionRepo),
   addExercise: new AddExerciseUseCase(sessionRepo),
   startExercise: new StartExerciseUseCase(sessionRepo),
   finishExercise: new FinishExerciseUseCase(sessionRepo),
@@ -47,7 +49,7 @@ export const serviceLocator = {
   register: new RegisterUseCase(userRepo),
   getCurrentUser: new GetCurrentUserUseCase(userRepo),
 
-  // Auth persistence helpers — keeps Presentation away from Infrastructure
+  // Auth persistence helpers
   restoreUserId: (): Promise<string | null> =>
     useMock ? Promise.resolve(null) : HttpUserRepository.restoreUserId(),
 

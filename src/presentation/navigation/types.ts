@@ -5,8 +5,10 @@ export type RootStackParamList = {
   Register: undefined;
   SessionHub: undefined;
   ActiveSession: { sessionId: string };
-  SessionDetail: { sessionId: string }; // ← read-only view of a finished session
+  SessionDetail: { sessionId: string };
   SessionFinished: { sessionId: string };
+  // Modal — presented over ActiveSessionScreen
+  AddExercise: { sessionId: string };
 };
 
 export type LoginScreenProps = NativeStackScreenProps<RootStackParamList, 'Login'>;
@@ -18,3 +20,4 @@ export type SessionFinishedScreenProps = NativeStackScreenProps<
   RootStackParamList,
   'SessionFinished'
 >;
+export type AddExerciseScreenProps = NativeStackScreenProps<RootStackParamList, 'AddExercise'>;

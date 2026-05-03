@@ -10,6 +10,7 @@ import { SessionHubScreen } from '@presentation/screens/SessionHubScreen';
 import { ActiveSessionScreen } from '@presentation/screens/ActiveSessionScreen';
 import { SessionDetailScreen } from '@presentation/screens/SessionDetailScreen';
 import { SessionFinishedScreen } from '@presentation/screens/SessionFinishedScreen';
+import { AddExerciseSheet } from '@presentation/screens/AddExerciseSheet';
 import { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -43,16 +44,23 @@ export const RootNavigator: React.FC = () => {
         }}
       >
         {user === null ? (
+          // ── Auth stack ────────────────────────────────────────────────────
           <>
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
           </>
         ) : (
+          // ── App stack ─────────────────────────────────────────────────────
           <>
             <Stack.Screen name="SessionHub" component={SessionHubScreen} />
             <Stack.Screen name="ActiveSession" component={ActiveSessionScreen} />
             <Stack.Screen name="SessionDetail" component={SessionDetailScreen} />
             <Stack.Screen name="SessionFinished" component={SessionFinishedScreen} />
+
+            {/* Modal — slides up over ActiveSessionScreen */}
+            <Stack.Group screenOptions={{ presentation: 'modal' }}>
+              <Stack.Screen name="AddExercise" component={AddExerciseSheet} />
+            </Stack.Group>
           </>
         )}
       </Stack.Navigator>
