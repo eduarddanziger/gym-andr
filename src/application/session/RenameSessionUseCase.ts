@@ -5,6 +5,8 @@ export class RenameSessionUseCase {
   constructor(private readonly sessionRepo: ISessionRepository) {}
 
   async execute(sessionId: string, label: string): Promise<Session> {
-    return this.sessionRepo.renameSession(sessionId, label);
+    const trimmed = label.trim();
+    if (!trimmed) throw new Error('Label cannot be empty');
+    return this.sessionRepo.renameSession(sessionId, trimmed);
   }
 }

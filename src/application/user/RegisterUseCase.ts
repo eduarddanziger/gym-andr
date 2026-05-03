@@ -10,7 +10,7 @@ export class RegisterUseCase {
     if (!trimmedEmail) throw new Error('Email is required');
     if (!trimmedName) throw new Error('Name is required');
     try {
-      return this.userRepo.register(trimmedEmail, trimmedName);
+      return await this.userRepo.register(trimmedEmail, trimmedName);
     } catch (e) {
       const msg = (e as Error).message;
       if (msg.includes('400') || msg.toLowerCase().includes('bad request')) {
