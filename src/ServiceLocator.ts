@@ -8,6 +8,7 @@ import { InMemoryUserRepository } from '@infrastructure/user/InMemoryUserReposit
 
 import { CreateSessionUseCase } from '@application/session/CreateSessionUseCase';
 import { InheritSessionUseCase } from '@application/session/InheritSessionUseCase';
+import { RenameSessionUseCase } from '@application/session/RenameSessionUseCase';
 import { DeleteSessionUseCase } from '@application/session/DeleteSessionUseCase';
 import { AddExerciseUseCase } from '@application/session/AddExerciseUseCase';
 import { StartExerciseUseCase } from '@application/session/StartExerciseUseCase';
@@ -29,6 +30,7 @@ export const serviceLocator = {
   // Session use cases
   createSession: new CreateSessionUseCase(sessionRepo),
   inheritSession: new InheritSessionUseCase(sessionRepo),
+  renameSession: new RenameSessionUseCase(sessionRepo),
   deleteSession: new DeleteSessionUseCase(sessionRepo),
   addExercise: new AddExerciseUseCase(sessionRepo),
   startExercise: new StartExerciseUseCase(sessionRepo),

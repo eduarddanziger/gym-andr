@@ -1,10 +1,10 @@
 import { ISessionRepository } from '@domain/session/ISessionRepository';
 import { Session } from '@domain/session/Session';
 
-export class CreateSessionUseCase {
+export class RenameSessionUseCase {
   constructor(private readonly sessionRepo: ISessionRepository) {}
 
-  async execute(userId: string, label?: string): Promise<Session> {
-    return this.sessionRepo.create(userId, label);
+  async execute(sessionId: string, label: string): Promise<Session> {
+    return this.sessionRepo.renameSession(sessionId, label);
   }
 }

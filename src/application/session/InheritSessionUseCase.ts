@@ -5,7 +5,7 @@ import { Session } from '@domain/session/Session';
 export class InheritSessionUseCase {
   constructor(private readonly sessionRepo: ISessionRepository) {}
 
-  async execute(userId: string, inheritFromSessionId: string): Promise<Session> {
-    return this.sessionRepo.create(userId, inheritFromSessionId);
+  async execute(userId: string, inheritFromSessionId: string, label?: string): Promise<Session> {
+    return this.sessionRepo.create(userId, label, inheritFromSessionId);
   }
 }

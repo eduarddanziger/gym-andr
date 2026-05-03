@@ -11,6 +11,7 @@ export interface Session {
   readonly finishedAt?: Date;
   readonly status: SessionStatus;
   readonly inheritedFromSessionId?: string;
+  readonly label?: string;
   readonly exercises: Exercise[];
 }
 

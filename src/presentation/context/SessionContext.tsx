@@ -78,8 +78,9 @@ function sessionReducer(state: SessionState, action: SessionAction): SessionStat
 
 interface SessionContextValue extends SessionState {
   runningExercise: Exercise | undefined;
-  startNewSession: () => Promise<Session>;
-  inheritLastSession: (inheritFromSessionId: string) => Promise<Session>;
+  startNewSession: (label?: string) => Promise<Session>;
+  inheritLastSession: (inheritFromSessionId: string, label?: string) => Promise<Session>;
+  renameSession: (label: string) => Promise<Session>;
   addExercise: (input: AddExerciseInput) => Promise<Exercise>;
   startExercise: (exerciseId: string, maxEndAt?: Date) => Promise<Exercise>;
   finishExercise: (exerciseId: string) => Promise<Exercise>;
@@ -106,25 +107,29 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return user.id;
   }, [user]);
 
-  const startNewSession = useCallback(async (): Promise<Session> => {
-    dispatch({ type: 'LOADING' });
-    try {
-      const session = await serviceLocator.createSession.execute(requireUser());
-      dispatch({ type: 'SESSION_SET', payload: session });
-      return session;
-    } catch (e) {
-      dispatch({ type: 'ERROR', payload: (e as Error).message });
-      throw e;
-    }
-  }, [requireUser]);
+  const startNewSession = useCallback(
+    async (label?: string): Promise<Session> => {
+      dispatch({ type: 'LOADING' });
+      try {
+        const session = await serviceLocator.createSession.execute(requireUser(), label);
+        dispatch({ type: 'SESSION_SET', payload: session });
+        return session;
+      } catch (e) {
+        dispatch({ type: 'ERROR', payload: (e as Error).message });
+        throw e;
+      }
+    },
+    [requireUser],
+  );
 
   const inheritLastSession = useCallback(
-    async (inheritFromSessionId: string): Promise<Session> => {
+    async (inheritFromSessionId: string, label?: string): Promise<Session> => {
       dispatch({ type: 'LOADING' });
       try {
         const session = await serviceLocator.inheritSession.execute(
           requireUser(),
           inheritFromSessionId,
+          label,
         );
         dispatch({ type: 'SESSION_SET', payload: session });
         return session;
@@ -134,6 +139,21 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
     },
     [requireUser],
+  );
+
+  const renameSession = useCallback(
+    async (label: string): Promise<Session> => {
+      dispatch({ type: 'LOADING' });
+      try {
+        const session = await serviceLocator.renameSession.execute(requireSession().id, label);
+        dispatch({ type: 'SESSION_SET', payload: session });
+        return session;
+      } catch (e) {
+        dispatch({ type: 'ERROR', payload: (e as Error).message });
+        throw e;
+      }
+    },
+    [requireSession],
   );
 
   const addExercise = useCallback(
@@ -223,6 +243,7 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
         runningExercise: state.currentSession ? runningExercise(state.currentSession) : undefined,
         startNewSession,
         inheritLastSession,
+        renameSession,
         addExercise,
         startExercise,
         finishExercise,

@@ -25,7 +25,8 @@ export interface GetSessionsQuery {
 // Domain defines the contract; Infrastructure implements it.
 // NO fetch(), NO HTTP details here.
 export interface ISessionRepository {
-  create(userId: string, inheritFromSessionId?: string): Promise<Session>;
+  create(userId: string, label?: string, inheritFromSessionId?: string): Promise<Session>;
+  renameSession(sessionId: string, label: string): Promise<Session>;
   getById(sessionId: string): Promise<Session>;
   deleteSession(sessionId: string): Promise<void>;
   finish(sessionId: string): Promise<Session>;

@@ -29,6 +29,7 @@ const mapSession = (raw: Record<string, unknown>): Session => ({
   finishedAt: raw['finishedAt'] ? new Date(raw['finishedAt'] as string) : undefined,
   status: raw['status'] as Session['status'],
   inheritedFromSessionId: raw['inheritedFromSessionId'] as string | undefined,
+  label: raw['label'] as string | undefined,
   exercises: ((raw['exercises'] as Record<string, unknown>[]) ?? []).map(mapExercise),
 });
 
@@ -40,10 +41,18 @@ const toQueryString = (params: Record<string, string | number | undefined>): str
 };
 
 export class HttpSessionRepository implements ISessionRepository {
-  async create(userId: string, inheritFromSessionId?: string): Promise<Session> {
+  async create(userId: string, label?: string, inheritFromSessionId?: string): Promise<Session> {
     const raw = await apiRequest<Record<string, unknown>>('/api/sessions', {
       method: 'POST',
-      body: JSON.stringify({ userId, inheritFromSessionId }),
+      body: JSON.stringify({ userId, label, inheritFromSessionId }),
+    });
+    return mapSession(raw);
+  }
+
+  async renameSession(sessionId: string, label: string): Promise<Session> {
+    const raw = await apiRequest<Record<string, unknown>>(`/api/sessions/${sessionId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ label }),
     });
     return mapSession(raw);
   }
