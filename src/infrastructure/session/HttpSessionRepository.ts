@@ -75,11 +75,18 @@ export class HttpSessionRepository implements ISessionRepository {
 
   async getActive(userId: string): Promise<Session | null> {
     const qs = toQueryString({ userId, page: 1, pageSize: 1 });
-    const raw = await apiRequest<{ items?: Record<string, unknown>[] }>(
-      `/api/sessions/active${qs}`,
-    );
-    const first = raw.items?.[0];
-    return first ? mapSession(first) : null;
+    try {
+      const raw = await apiRequest<{ items?: Record<string, unknown>[] }>(
+        `/api/sessions/active${qs}`,
+      );
+      const first = raw.items?.[0];
+      return first ? mapSession(first) : null;
+    } catch (e) {
+      const msg = (e as Error).message;
+      // Server returns 404 or 405 when no active session exists — let us treat it as null
+      if (msg.includes('404') || msg.includes('405')) return null;
+      throw e;
+    }
   }
 
   async getSessions(query: GetSessionsQuery): Promise<PagedResponse<Session>> {
@@ -90,20 +97,28 @@ export class HttpSessionRepository implements ISessionRepository {
       page: query.page,
       pageSize: query.pageSize,
     });
-    const raw = await apiRequest<{
-      items: Record<string, unknown>[];
-      page: number;
-      pageSize: number;
-      totalCount: number;
-      totalPages: number;
-    }>(`/api/sessions${qs}`);
-    return {
-      items: (raw.items ?? []).map(mapSession),
-      page: raw.page,
-      pageSize: raw.pageSize,
-      totalCount: raw.totalCount,
-      totalPages: raw.totalPages,
-    };
+    try {
+      const raw = await apiRequest<{
+        items: Record<string, unknown>[];
+        page: number;
+        pageSize: number;
+        totalCount: number;
+        totalPages: number;
+      }>(`/api/sessions${qs}`);
+      return {
+        items: (raw.items ?? []).map(mapSession),
+        page: raw.page,
+        pageSize: raw.pageSize,
+        totalCount: raw.totalCount,
+        totalPages: raw.totalPages,
+      };
+    } catch (e) {
+      const msg = (e as Error).message;
+      if (msg.includes('404') || msg.includes('405')) {
+        return { items: [], page: 1, pageSize: 10, totalCount: 0, totalPages: 0 };
+      }
+      throw e;
+    }
   }
 
   async addExercise(sessionId: string, input: AddExerciseInput): Promise<Exercise> {
