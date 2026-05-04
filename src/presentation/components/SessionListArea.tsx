@@ -1,8 +1,16 @@
 import React from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  ViewStyle,
+  StyleProp,
+} from 'react-native';
 import { Session } from '@domain/session/Session';
 import { AppTheme } from '@presentation/theme';
-import { SessionListItem } from './SessionListItem'; // Assuming it's in the same directory
+import { SessionListItem } from './SessionListItem';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -10,9 +18,10 @@ interface SessionListAreaProps {
   isLoading: boolean;
   error: string | null;
   activeSession: Session | null;
-  finishedSessions: Session[]; // New prop
+  finishedSessions: Session[];
   onSessionTap: (session: Session) => void;
-  theme: AppTheme; // Keep theme prop as it's used for styling within this component
+  theme: AppTheme;
+  containerStyle?: StyleProp<ViewStyle>; // New prop for external styling of the root View
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -21,17 +30,18 @@ export const SessionListArea: React.FC<SessionListAreaProps> = ({
   isLoading,
   error,
   activeSession,
-  finishedSessions, // Destructure new prop
+  finishedSessions,
   onSessionTap,
   theme,
+  containerStyle,
 }) => {
-  const s = styles(theme); // Use internal styles
+  const s = styles(theme);
 
   // Derived list: Active session always on top, finished sessions below
   const listItems: Session[] = [...(activeSession ? [activeSession] : []), ...finishedSessions];
 
   return (
-    <View style={s.listArea}>
+    <View style={[s.listArea, containerStyle]}>
       <Text style={s.areaLabel}>Sessions</Text>
       {isLoading ? (
         <ActivityIndicator color={theme.accent} style={s.spinner} />
@@ -64,6 +74,7 @@ export const SessionListArea: React.FC<SessionListAreaProps> = ({
 const styles = (theme: AppTheme): ReturnType<typeof StyleSheet.create> =>
   StyleSheet.create({
     listArea: {
+      flex: 1,
       paddingHorizontal: 24,
       paddingTop: 16,
       paddingBottom: 12,
@@ -79,7 +90,7 @@ const styles = (theme: AppTheme): ReturnType<typeof StyleSheet.create> =>
       marginBottom: 10,
     },
     list: {
-      maxHeight: 180,
+      // Removed maxHeight: 180 to allow flex to control height
     },
     spinner: {
       marginVertical: 24,

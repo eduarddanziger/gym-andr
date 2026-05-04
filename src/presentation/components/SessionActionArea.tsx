@@ -1,7 +1,15 @@
 import React from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  StyleProp,
+  ViewStyle,
+} from 'react-native';
 import { Session } from '@domain/session/Session';
-import { AppTheme, useTheme } from '@presentation/theme'; // Import useTheme
+import { AppTheme, useTheme } from '@presentation/theme';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -13,8 +21,7 @@ interface SessionActionAreaProps {
   onFinishAndContinue: () => Promise<void>;
   onCreateCopy: () => Promise<void>;
   onCreateNew: () => Promise<void>;
-  // Removed theme prop, as it will be accessed via useTheme hook
-  // Removed all style props
+  containerStyle?: StyleProp<ViewStyle>;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -27,13 +34,13 @@ export const SessionActionArea: React.FC<SessionActionAreaProps> = ({
   onFinishAndContinue,
   onCreateCopy,
   onCreateNew,
-  // Removed theme and style props from destructuring
+  containerStyle, // Destructure new prop
 }) => {
-  const theme = useTheme(); // Use the theme hook
-  const s = styles(theme); // Create styles using the theme
+  const theme = useTheme();
+  const s = styles(theme);
 
   return (
-    <View style={s.actionArea}>
+    <View style={[s.actionArea, containerStyle]}>
       <Text style={s.areaLabel}>Actions</Text>
       {isActing ? (
         <ActivityIndicator color={theme.accent} />
