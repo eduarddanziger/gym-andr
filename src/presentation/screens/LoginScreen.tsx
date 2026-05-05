@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
 import { useAuth } from '@presentation/context/AuthContext';
 import { AppTheme, useTheme } from '@presentation/theme';
@@ -10,8 +10,9 @@ import {
   PrimaryButton,
 } from '@presentation/components/AuthComponents';
 import { LoginScreenProps } from '@presentation/navigation/types';
+import { serviceLocator } from '@src/ServiceLocator';
 
-// Single Responsibility: this screen owns login flow only.
+// Single Responsibility: this screen owns the login flow only.
 // Registration → RegisterScreen (navigate via stack).
 // Supabase migration: only LoginUseCase changes, this screen stays as-is.
 
@@ -21,6 +22,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const [email, setEmail] = useState('');
 
   const s = styles(theme);
+
+  useEffect(() => {
+    const restoreEmail = async (): Promise<void> => {
+      const lastEmail = await serviceLocator.restoreLastLoginEmail();
+      if (lastEmail) setEmail(lastEmail);
+    };
+    void restoreEmail();
+  }, []);
 
   const canSubmit = email.trim().length > 0 && !isLoading;
 

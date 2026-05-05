@@ -4,6 +4,7 @@ import { User } from '@domain/user/User';
 import * as SecureStore from 'expo-secure-store';
 
 const USER_ID_KEY = 'gym_andr_user_id';
+const LAST_LOGIN_EMAIL_KEY = 'gym_andr_last_login_email';
 
 const mapUser = (raw: Record<string, unknown>): User => ({
   id: raw['id'] as string,
@@ -20,6 +21,7 @@ export class HttpUserRepository implements IUserRepository {
     const user = mapUser(raw);
     // Persist userId so app can restore auth on next launch
     await SecureStore.setItemAsync(USER_ID_KEY, user.id);
+    await SecureStore.setItemAsync(LAST_LOGIN_EMAIL_KEY, user.email);
     setCurrentUserId(user.id);
     return user;
   }
@@ -31,6 +33,7 @@ export class HttpUserRepository implements IUserRepository {
     });
     const user = mapUser(raw);
     await SecureStore.setItemAsync(USER_ID_KEY, user.id);
+    await SecureStore.setItemAsync(LAST_LOGIN_EMAIL_KEY, user.email);
     setCurrentUserId(user.id);
     return user;
   }
@@ -50,5 +53,9 @@ export class HttpUserRepository implements IUserRepository {
   static async clearUserId(): Promise<void> {
     await SecureStore.deleteItemAsync(USER_ID_KEY);
     setCurrentUserId(null);
+  }
+
+  static async restoreLastLoginEmail(): Promise<string | null> {
+    return SecureStore.getItemAsync(LAST_LOGIN_EMAIL_KEY);
   }
 }

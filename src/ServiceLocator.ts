@@ -55,4 +55,7 @@ export const serviceLocator = {
 
   clearUserId: (): Promise<void> =>
     useMock ? Promise.resolve() : HttpUserRepository.clearUserId(),
+
+  restoreLastLoginEmail: (): Promise<string | null> =>
+    useMock ? Promise.resolve(null) : HttpUserRepository.restoreLastLoginEmail(),
 } as const;
