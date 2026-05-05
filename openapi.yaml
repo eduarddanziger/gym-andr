@@ -1,3 +1,4 @@
+#file: noinspection SpellCheckingInspection
 openapi: 3.0.1
 info:
   title: Kiss Gym API

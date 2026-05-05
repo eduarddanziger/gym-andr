@@ -16,7 +16,7 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     // Dev: pass userId as a header so the server can identify the caller.
-    // Production: replace with Authorization: Bearer <supabase_token>
+    // Production: replace it with Authorization: Bearer <supabase_token>
     ...(_userId ? { 'X-User-Id': _userId } : {}),
   };
 

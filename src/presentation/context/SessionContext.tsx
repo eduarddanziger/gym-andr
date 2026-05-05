@@ -51,7 +51,7 @@ function sessionReducer(state: SessionState, action: SessionAction): SessionStat
         ? state.currentSession.exercises.map(e => (e.id === incoming.id ? incoming : e))
         : [...state.currentSession.exercises, incoming];
 
-      // Mirror server behaviour: when a new Running exercise arrives,
+      // Mirror server behavior: when a new Running exercise arrives,
       // auto-finish the previous Running one in local state too.
       if (incoming.status === 'Running') {
         exercises = exercises.map(e =>
