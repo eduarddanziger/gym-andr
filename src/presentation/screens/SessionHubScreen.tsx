@@ -18,17 +18,17 @@ export const SessionHubScreen: React.FC<SessionHubScreenProps> = ({ navigation }
   const { startNewSession, inheritLastSession } = useSession();
   const s = styles(theme);
 
-  const { data, isLoading, error: dataLoadingError, loadData } = useSessionHubData(); // Renamed error to dataLoadingError
+  const { data, isLoading, error: dataLoadingError, loadData } = useSessionHubData();
 
   const [isActing, setIsActing] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null); // New state for action-specific errors
 
   // Clear action error when data reloads or user changes
   useEffect(() => {
-    if (!isLoading) {
+    if (!isActing) {
       setActionError(null);
     }
-  }, [isLoading]);
+  }, [isActing]);
 
   // ── Actions ─────────────────────────────────────────────────────────────────
 
@@ -107,10 +107,9 @@ export const SessionHubScreen: React.FC<SessionHubScreenProps> = ({ navigation }
       )}
 
       {/* ── Area 2 — Session list ── */}
-      <View style={{ flex: 3 }}>
+      <View style={s.listArea}>
         <SessionListArea
           isLoading={isLoading}
-          error={dataLoadingError} // Pass data loading error
           activeSession={data?.activeSession ?? null}
           finishedSessions={data?.finishedSessions ?? []}
           onSessionTap={handleSessionTap}
@@ -126,7 +125,7 @@ export const SessionHubScreen: React.FC<SessionHubScreenProps> = ({ navigation }
       )}
 
       {/* ── Area 3 — Actions ── */}
-      <View style={{ flex: 2 }}>
+      <View style={s.actionArea}>
         <SessionActionArea
           isActing={isActing}
           activeSession={data?.activeSession ?? null}
@@ -182,4 +181,6 @@ const styles = (theme: AppTheme): ReturnType<typeof StyleSheet.create> =>
       fontSize: 13,
       textAlign: 'center',
     },
+    listArea: { flex: 3 },
+    actionArea: { flex: 2 },
   });

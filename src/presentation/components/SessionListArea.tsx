@@ -16,7 +16,6 @@ import { SessionListItem } from './SessionListItem';
 
 interface SessionListAreaProps {
   isLoading: boolean;
-  error: string | null;
   activeSession: Session | null;
   finishedSessions: Session[];
   onSessionTap: (session: Session) => void;
@@ -28,7 +27,6 @@ interface SessionListAreaProps {
 
 export const SessionListArea: React.FC<SessionListAreaProps> = ({
   isLoading,
-  error,
   activeSession,
   finishedSessions,
   onSessionTap,
@@ -45,8 +43,6 @@ export const SessionListArea: React.FC<SessionListAreaProps> = ({
       <Text style={s.areaLabel}>Sessions</Text>
       {isLoading ? (
         <ActivityIndicator color={theme.accent} style={s.spinner} />
-      ) : error ? (
-        <Text style={s.errorText}>{error}</Text>
       ) : listItems.length === 0 ? (
         <View style={s.emptyCard}>
           <Text style={s.emptyTitle}>No sessions yet.</Text>
