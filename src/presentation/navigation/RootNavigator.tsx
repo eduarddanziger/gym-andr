@@ -1,9 +1,9 @@
 import React from 'react';
-import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '@presentation/context/AuthContext';
 import { useTheme } from '@presentation/theme';
+import { AppSplashScreen } from '@presentation/components/AppSplashScreen';
 import { LoginScreen } from '@presentation/screens/LoginScreen';
 import { RegisterScreen } from '@presentation/screens/RegisterScreen';
 import { SessionHubScreen } from '@presentation/screens/SessionHubScreen';
@@ -20,18 +20,7 @@ export const RootNavigator: React.FC = () => {
   const theme = useTheme();
 
   if (isLoading) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: theme.background,
-        }}
-      >
-        <ActivityIndicator color={theme.accent} size="large" />
-      </View>
-    );
+    return <AppSplashScreen />;
   }
 
   return (
