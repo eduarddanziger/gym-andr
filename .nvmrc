@@ -1,1 +1,1 @@
-echo "lts/*" > ./.nvmrc
+lts/*
