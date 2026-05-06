@@ -221,7 +221,6 @@ export const ActiveSessionScreen: React.FC<ActiveSessionScreenProps> = ({ route,
       // Existing pending exercise
       try {
         await startExercise(selectedId);
-        setSelectedId(selectedId);
       } catch {
         /* error in context */
       }
