@@ -48,17 +48,11 @@ const isSuggestionName = (name: string): boolean => name.endsWith('?');
 interface NewExerciseDraft {
   name: string;
   photoUri: string | null;
-  timerEnabled: boolean;
-  timerMinutes: number;
-  timerSeconds: number;
 }
 
 const makeDraft = (): NewExerciseDraft => ({
   name: randomSuggestion(),
   photoUri: null,
-  timerEnabled: false,
-  timerMinutes: 5,
-  timerSeconds: 0,
 });
 
 // ── Screen ────────────────────────────────────────────────────────────────────
@@ -199,17 +193,10 @@ export const ActiveSessionScreen: React.FC<ActiveSessionScreenProps> = ({ route,
       const name = stripSuggestionMark(draft.name);
       if (!name) return;
 
-      let maxEndAt: Date | undefined;
-      if (draft.timerEnabled) {
-        const totalMs = (draft.timerMinutes * 60 + draft.timerSeconds) * 1000;
-        maxEndAt = new Date(Date.now() + totalMs);
-      }
-
       try {
         await addExercise({
           autoLabel: name,
           photoUrl: draft.photoUri ?? undefined,
-          maxEndAt,
         });
         setDraft(null);
         setSelectedId(null);
@@ -446,70 +433,26 @@ export const ActiveSessionScreen: React.FC<ActiveSessionScreenProps> = ({ route,
 
         {/* Name input + photo — shown when New is selected */}
         {isSelectedNew && draft && (
-          <>
-            <View style={s.inputRow}>
-              <TextInput
-                ref={nameInputRef}
-                style={[
-                  s.nameInput,
-                  isSuggestionName(draft.name) ? s.nameInputSuggestion : s.nameInputLime,
-                ]}
-                value={draft.name}
-                onChangeText={name => setDraft(d => (d ? { ...d, name } : d))}
-                returnKeyType="done"
-                maxLength={80}
-                selectTextOnFocus
-              />
-              <Pressable
-                style={[s.photoBtn, draft.photoUri && s.photoBtnFilled]}
-                onPress={handlePickPhoto}
-              >
-                <Text>{draft.photoUri ? '🖼️' : '📷'}</Text>
-              </Pressable>
-            </View>
-
-            {/* Compact timer row */}
-            <View style={s.timerRow}>
-              <Text style={s.timerLabel}>Max duration</Text>
-              {draft.timerEnabled ? (
-                <View style={s.timerInputRow}>
-                  <TextInput
-                    style={s.timerSegment}
-                    value={String(draft.timerMinutes).padStart(2, '0')}
-                    onChangeText={v =>
-                      setDraft(d =>
-                        d ? { ...d, timerMinutes: Math.min(99, parseInt(v) || 0) } : d,
-                      )
-                    }
-                    keyboardType="number-pad"
-                    maxLength={2}
-                    selectTextOnFocus
-                  />
-                  <Text style={s.timerColon}>:</Text>
-                  <TextInput
-                    style={s.timerSegment}
-                    value={String(draft.timerSeconds).padStart(2, '0')}
-                    onChangeText={v =>
-                      setDraft(d =>
-                        d ? { ...d, timerSeconds: Math.min(59, parseInt(v) || 0) } : d,
-                      )
-                    }
-                    keyboardType="number-pad"
-                    maxLength={2}
-                    selectTextOnFocus
-                  />
-                </View>
-              ) : (
-                <Text style={s.timerOff}>off</Text>
-              )}
-              <Pressable
-                style={[s.toggle, draft.timerEnabled && s.toggleOn]}
-                onPress={() => setDraft(d => (d ? { ...d, timerEnabled: !d.timerEnabled } : d))}
-              >
-                <View style={[s.toggleKnob, draft.timerEnabled && s.toggleKnobOn]} />
-              </Pressable>
-            </View>
-          </>
+          <View style={s.inputRow}>
+            <TextInput
+              ref={nameInputRef}
+              style={[
+                s.nameInput,
+                isSuggestionName(draft.name) ? s.nameInputSuggestion : s.nameInputLime,
+              ]}
+              value={draft.name}
+              onChangeText={name => setDraft(d => (d ? { ...d, name } : d))}
+              returnKeyType="done"
+              maxLength={80}
+              selectTextOnFocus
+            />
+            <Pressable
+              style={[s.photoBtn, draft.photoUri && s.photoBtnFilled]}
+              onPress={handlePickPhoto}
+            >
+              <Text>{draft.photoUri ? '🖼️' : '📷'}</Text>
+            </Pressable>
+          </View>
         )}
 
         {/* Primary action row */}
@@ -759,37 +702,6 @@ const styles = (theme: AppTheme): ReturnType<typeof StyleSheet.create> =>
       justifyContent: 'center',
     },
     photoBtnFilled: { borderColor: '#534AB7', backgroundColor: '#141420' },
-
-    // Timer
-    timerRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    timerLabel: { flex: 1, fontSize: 11, color: theme.textMuted },
-    timerInputRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-    timerSegment: {
-      width: 32,
-      textAlign: 'center',
-      fontSize: 13,
-      color: theme.textPrimary,
-      backgroundColor: theme.surface,
-      borderWidth: 0.5,
-      borderColor: theme.border,
-      borderRadius: 6,
-      paddingVertical: 4,
-      fontVariant: ['tabular-nums'],
-    },
-    timerColon: { fontSize: 13, color: theme.textSecondary },
-    timerOff: { fontSize: 11, color: theme.textMuted },
-    toggle: {
-      width: 36,
-      height: 20,
-      borderRadius: 10,
-      backgroundColor: theme.border,
-      flexDirection: 'row',
-      alignItems: 'center',
-      padding: 2,
-    },
-    toggleOn: { backgroundColor: '#0F6E56' },
-    toggleKnob: { width: 16, height: 16, borderRadius: 8, backgroundColor: '#F5F5F5' },
-    toggleKnobOn: { marginLeft: 16 },
 
     // Buttons
     btnRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },

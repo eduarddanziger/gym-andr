@@ -6,7 +6,6 @@ import { PagedResponse } from '../PagedResponse';
 export interface AddExerciseInput {
   autoLabel: string;
   photoUrl?: string;
-  maxEndAt?: Date;
   properties?: { name: string; value: string }[];
 }
 
@@ -39,7 +38,7 @@ export interface ISessionRepository {
   getSessions(query: GetSessionsQuery): Promise<PagedResponse<Session>>;
 
   addExercise(sessionId: string, input: AddExerciseInput): Promise<Exercise>;
-  startExercise(sessionId: string, exerciseId: string, maxEndAt?: Date): Promise<Exercise>;
+  startExercise(sessionId: string, exerciseId: string): Promise<Exercise>;
   finishExercise(sessionId: string, exerciseId: string): Promise<Exercise>;
   deleteExercise(sessionId: string, exerciseId: string): Promise<void>;
 }

@@ -116,7 +116,6 @@ export class InMemorySessionRepository implements ISessionRepository {
       id: uuid(),
       autoLabel: input.autoLabel,
       photoUrl: input.photoUrl,
-      maxEndAt: input.maxEndAt,
       startedAt: now(),
       status: 'Running',
       properties: input.properties ?? [],
@@ -125,13 +124,13 @@ export class InMemorySessionRepository implements ISessionRepository {
     return newExercise;
   }
 
-  async startExercise(sessionId: string, exerciseId: string, maxEndAt?: Date): Promise<Exercise> {
+  async startExercise(sessionId: string, exerciseId: string): Promise<Exercise> {
     const session = await this.getById(sessionId);
     let started: Exercise | undefined;
     const exercises = session.exercises.map(e => {
       if (e.status === 'Running') return { ...e, status: 'Finished' as const, realEndAt: now() };
       if (e.id === exerciseId) {
-        started = { ...e, status: 'Running' as const, startedAt: now(), maxEndAt };
+        started = { ...e, status: 'Running' as const, startedAt: now() };
         return started;
       }
       return e;

@@ -95,7 +95,7 @@ interface SessionContextValue extends SessionState {
   startNewSession: () => Promise<Session>;
   inheritLastSession: (inheritFromSessionId: string) => Promise<Session>;
   addExercise: (input: AddExerciseInput) => Promise<Exercise>;
-  startExercise: (exerciseId: string, maxEndAt?: Date) => Promise<Exercise>;
+  startExercise: (exerciseId: string) => Promise<Exercise>;
   finishExercise: (exerciseId: string) => Promise<Exercise>;
   deleteExercise: (exerciseId: string) => Promise<void>;
   finishSession: () => Promise<Session>;
@@ -187,13 +187,12 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   );
 
   const startExercise = useCallback(
-    async (exerciseId: string, maxEndAt?: Date): Promise<Exercise> => {
+    async (exerciseId: string): Promise<Exercise> => {
       dispatch({ type: 'LOADING' });
       try {
         const exercise = await serviceLocator.startExercise.execute(
           requireSession().id,
           exerciseId,
-          maxEndAt,
         );
         dispatch({ type: 'EXERCISE_UPSERT', payload: exercise });
         return exercise;

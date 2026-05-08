@@ -16,7 +16,6 @@ const mapExercise = (raw: Record<string, unknown>): Exercise => ({
   autoLabel: raw['autoLabel'] as string,
   photoUrl: raw['photoUrl'] as string | undefined,
   startedAt: raw['startedAt'] ? new Date(raw['startedAt'] as string) : undefined,
-  maxEndAt: raw['maxEndAt'] ? new Date(raw['maxEndAt'] as string) : undefined,
   realEndAt: raw['realEndAt'] ? new Date(raw['realEndAt'] as string) : undefined,
   status: raw['status'] as Exercise['status'],
   properties: (raw['properties'] as { name: string; value: string }[]) ?? [],
@@ -127,19 +126,17 @@ export class HttpSessionRepository implements ISessionRepository {
       body: JSON.stringify({
         autoLabel: input.autoLabel,
         photoUrl: input.photoUrl,
-        maxEndAt: input.maxEndAt?.toISOString(),
         properties: input.properties,
       }),
     });
     return mapExercise(raw);
   }
 
-  async startExercise(sessionId: string, exerciseId: string, maxEndAt?: Date): Promise<Exercise> {
+  async startExercise(sessionId: string, exerciseId: string): Promise<Exercise> {
     const raw = await apiRequest<Record<string, unknown>>(
       `/api/sessions/${sessionId}/exercises/${exerciseId}/start`,
       {
         method: 'POST',
-        body: JSON.stringify({ maxEndAt: maxEndAt?.toISOString() }),
       },
     );
     return mapExercise(raw);

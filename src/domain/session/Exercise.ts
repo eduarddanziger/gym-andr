@@ -7,7 +7,6 @@ export interface Exercise {
   readonly autoLabel: string;
   readonly photoUrl?: string;
   readonly startedAt?: Date;
-  readonly maxEndAt?: Date;
   readonly realEndAt?: Date;
   readonly status: ExerciseStatus;
   readonly properties: ExerciseProperty[];

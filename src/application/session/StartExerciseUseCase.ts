@@ -6,7 +6,7 @@ import { Exercise } from '@domain/session/Exercise';
 export class StartExerciseUseCase {
   constructor(private readonly sessionRepo: ISessionRepository) {}
 
-  async execute(sessionId: string, exerciseId: string, maxEndAt?: Date): Promise<Exercise> {
-    return this.sessionRepo.startExercise(sessionId, exerciseId, maxEndAt);
+  async execute(sessionId: string, exerciseId: string): Promise<Exercise> {
+    return this.sessionRepo.startExercise(sessionId, exerciseId);
   }
 }
