@@ -8,6 +8,8 @@ import {
   Text,
   TextInput,
   View,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { elapsedSeconds } from '@domain/session/Exercise';
@@ -326,7 +328,11 @@ export const ActiveSessionScreen: React.FC<ActiveSessionScreenProps> = ({ route,
   const sessionLabel = currentSession.label ?? 'Session';
 
   return (
-    <View style={s.root}>
+    <KeyboardAvoidingView
+      style={s.root}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={0}
+    >
       {/* ── Area 1: Header ── */}
       <View style={s.header}>
         <Pressable style={s.backBtn} hitSlop={12} onPress={() => navigation.navigate('SessionHub')}>
@@ -573,7 +579,7 @@ export const ActiveSessionScreen: React.FC<ActiveSessionScreenProps> = ({ route,
           <Text style={s.btnFinishSessionLabel}>⏹ Finish Session</Text>
         </Pressable>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -642,7 +648,7 @@ const styles = (theme: AppTheme): ReturnType<typeof StyleSheet.create> =>
     headerRight: { width: 52 },
 
     // List
-    list: { flex: 1 },
+    list: { flex: 1, minHeight: 80 },
     listContent: { paddingHorizontal: 14, paddingTop: 10, paddingBottom: 8, gap: 5 },
     emptyList: { fontSize: 13, color: theme.textMuted, textAlign: 'center', marginTop: 32 },
 
