@@ -423,7 +423,7 @@ export const ActiveSessionScreen: React.FC<ActiveSessionScreenProps> = ({ route,
         })}
 
         {sortedExercises.length === 0 && !draft && (
-          <Text style={s.emptyList}>Tap &quot;+ Add New&quot; to start your first exercise.</Text>
+          <Text style={s.emptyList}>{'Tap "+ Add New" to start your first exercise.'}</Text>
         )}
       </ScrollView>
 
