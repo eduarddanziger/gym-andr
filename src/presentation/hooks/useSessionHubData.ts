@@ -1,52 +1,87 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Session } from '@domain/session/Session';
-import { useAuth } from '@presentation/context/AuthContext';
+import { Session, isActive } from '@domain/session/Session';
 import { serviceLocator } from '@src/ServiceLocator';
+import { useAuth } from '@presentation/context/AuthContext';
 
-interface HubData {
-  activeSession: Session | null;
-  finishedSessions: Session[];
-}
+// ── Types ─────────────────────────────────────────────────────────────────────
 
-interface UseSessionHubDataResult {
-  data: HubData | null;
+interface SessionHubData {
+  sessions: Session[];           // active first (if any), then finished desc
+  selectedSession: Session | null;
   isLoading: boolean;
   error: string | null;
-  loadData: () => Promise<void>;
+  selectSession: (id: string) => void;
+  reload: () => Promise<void>;
 }
 
-export const useSessionHubData = (): UseSessionHubDataResult => {
+// ── Auto-select rule ──────────────────────────────────────────────────────────
+// Active session always wins; otherwise take the first (latest finished)
+
+const autoSelect = (sessions: Session[]): Session | null =>
+  sessions.find(s => isActive(s)) ?? sessions[0] ?? null;
+
+// ── Hook ──────────────────────────────────────────────────────────────────────
+
+export const useSessionHubData = (): SessionHubData => {
   const { user } = useAuth();
 
-  const [data, setData] = useState<HubData | null>(null);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadData = useCallback(async (): Promise<void> => {
-    if (!user) return; // Don't load data if user is not available
+  const load = useCallback(async (): Promise<void> => {
+    if (!user) return;
     setIsLoading(true);
     setError(null);
     try {
-      const [activeSession, result] = await Promise.all([
+      const [activeSession, finishedResult] = await Promise.all([
         serviceLocator.getActiveSession.execute(user.id),
         serviceLocator.getSessions.execute({
           userId: user.id,
           status: 'Finished',
           sort: 'finishedAt:desc',
-          pageSize: 10,
+          pageSize: 20,
         }),
       ]);
-      setData({ activeSession, finishedSessions: result.items });
+
+      // Merge — active always first
+      const merged: Session[] = [
+        ...(activeSession ? [activeSession] : []),
+        ...finishedResult.items,
+      ];
+
+      setSessions(merged);
+
+      // Auto-select: preserve current selection if still valid, otherwise auto
+      setSelectedId(prev => {
+        const stillExists = prev && merged.some(s => s.id === prev);
+        if (stillExists) return prev;
+        return autoSelect(merged)?.id ?? null;
+      });
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setIsLoading(false);
     }
-  }, [user]); // Dependency on user
+  }, [user?.id]);
 
   useEffect(() => {
-    void loadData();
-  }, [loadData]); // Dependency on loadData
+    void load();
+  }, [load]);
 
-  return { data, isLoading, error, loadData };
+  const selectSession = useCallback((id: string): void => {
+    setSelectedId(id);
+  }, []);
+
+  const selectedSession = sessions.find(s => s.id === selectedId) ?? null;
+
+  return {
+    sessions,
+    selectedSession,
+    isLoading,
+    error,
+    selectSession,
+    reload: load,
+  };
 };

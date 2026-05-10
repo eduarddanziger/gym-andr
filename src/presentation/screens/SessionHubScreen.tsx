@@ -1,186 +1,207 @@
-import React, { useState, useEffect } from 'react'; // Added useEffect
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Session, isActive } from '@domain/session/Session';
+import React, { useCallback, useState } from 'react';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { isActive } from '@domain/session/Session';
 import { useAuth } from '@presentation/context/AuthContext';
 import { useSession } from '@presentation/context/SessionContext';
-import { AppTheme, useTheme } from '@presentation/theme';
 import { SessionHubScreenProps } from '@presentation/navigation/types';
 import { serviceLocator } from '@src/ServiceLocator';
-import { SessionListArea } from '@presentation/components/SessionListArea';
-import { SessionActionArea } from '@presentation/components/SessionActionArea';
 import { useSessionHubData } from '@presentation/hooks/useSessionHubData';
-
-// ── Screen ────────────────────────────────────────────────────────────────────
+import { HubHeader } from '../components/session-hub/HubHeader';
+import { HubSessionItem } from '../components/session-hub/HubSessionItem';
+import { HubActionArea } from '../components/session-hub/HubActionArea';
 
 export const SessionHubScreen: React.FC<SessionHubScreenProps> = ({ navigation }) => {
-  const theme = useTheme();
   const { user, logout } = useAuth();
   const { startNewSession, inheritLastSession } = useSession();
-  const s = styles(theme);
+  const s = styles();
 
-  const { data, isLoading, error: dataLoadingError, loadData } = useSessionHubData();
+  const { sessions, selectedSession, isLoading, reload, selectSession } = useSessionHubData();
 
   const [isActing, setIsActing] = useState(false);
-  const [actionError, setActionError] = useState<string | null>(null); // New state for action-specific errors
 
-  // Clear action error when data reloads or user changes
-  useEffect(() => {
-    if (!isActing) {
-      setActionError(null);
-    }
-  }, [isActing]);
+  // ── Navigation ──────────────────────────────────────────────────────────────
 
-  // ── Actions ─────────────────────────────────────────────────────────────────
+  const handleNavigate = useCallback(
+    (sessionId: string, active: boolean): void => {
+      if (active) {
+        navigation.navigate('ActiveSession', { sessionId });
+      } else {
+        navigation.navigate('SessionDetail', { sessionId });
+      }
+    },
+    [navigation],
+  );
 
-  const handleContinue = (): void => {
-    if (!data?.activeSession) return;
-    setActionError(null); // Clear previous action error
-    navigation.navigate('ActiveSession', { sessionId: data.activeSession.id });
-  };
+  // ── Delete ──────────────────────────────────────────────────────────────────
 
-  const handleFinishAndContinue = async (): Promise<void> => {
-    if (!data?.activeSession) return;
-    setIsActing(true);
-    setActionError(null); // Clear previous action error
-    try {
-      await serviceLocator.finishSession.execute(data.activeSession.id);
-      await loadData(); // reload hub — active session gone, appears in finished list
-    } catch (e) {
-      setActionError((e as Error).message); // Set action error
-    } finally {
-      setIsActing(false);
-    }
-  };
+  const handleDelete = useCallback(
+    (sessionId: string, active: boolean): void => {
+      if (active) {
+        Alert.alert(
+          'Finish and delete?',
+          'This will finish the active session and permanently delete it.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Finish & Delete',
+              style: 'destructive',
+              onPress: async (): Promise<void> => {
+                setIsActing(true);
+                try {
+                  await serviceLocator.finishSession.execute(sessionId);
+                  await serviceLocator.deleteSession.execute(sessionId);
+                  await reload();
+                } catch (e) {
+                  Alert.alert('Error', (e as Error).message);
+                } finally {
+                  setIsActing(false);
+                }
+              },
+            },
+          ],
+        );
+      } else {
+        Alert.alert('Delete session?', 'This session will be permanently removed.', [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: async (): Promise<void> => {
+              setIsActing(true);
+              try {
+                await serviceLocator.deleteSession.execute(sessionId);
+                await reload();
+              } catch (e) {
+                Alert.alert('Error', (e as Error).message);
+              } finally {
+                setIsActing(false);
+              }
+            },
+          },
+        ]);
+      }
+    },
+    [reload],
+  );
 
-  const handleCreateNew = async (): Promise<void> => {
+  // ── Continue ────────────────────────────────────────────────────────────────
+
+  const handleContinue = useCallback((): void => {
+    if (!selectedSession || !isActive(selectedSession)) return;
+    navigation.navigate('ActiveSession', { sessionId: selectedSession.id });
+  }, [selectedSession, navigation]);
+
+  // ── Create New ──────────────────────────────────────────────────────────────
+
+  const handleCreateNew = useCallback((): void => {
     if (!user) return;
-    setIsActing(true);
-    setActionError(null); // Clear previous action error
-    try {
-      const session = await startNewSession();
-      navigation.navigate('ActiveSession', { sessionId: session.id });
-    } catch (e) {
-      setActionError((e as Error).message); // Set action error
-      setIsActing(false); // Ensure acting state is reset on error
-    }
-  };
 
-  const handleCreateCopy = async (): Promise<void> => {
-    if (!user || !data?.finishedSessions[0]) return;
-    setIsActing(true);
-    setActionError(null); // Clear previous action error
-    try {
-      // Inherit from the most recent finished session (top of list)
-      const session = await inheritLastSession(data.finishedSessions[0].id);
-      navigation.navigate('ActiveSession', { sessionId: session.id });
-    } catch (e) {
-      setActionError((e as Error).message); // Set action error
-      setIsActing(false); // Ensure acting state is reset on error
+    // If active session exists — ask to finish it first
+    const activeSession = sessions.find(s => isActive(s));
+    if (activeSession) {
+      Alert.alert(
+        'Active session in progress',
+        'You must finish your active session before starting a new one.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Finish & Create New',
+            onPress: async (): Promise<void> => {
+              setIsActing(true);
+              try {
+                await serviceLocator.finishSession.execute(activeSession.id);
+                const session = await startNewSession();
+                navigation.navigate('ActiveSession', { sessionId: session.id });
+              } catch (e) {
+                Alert.alert('Error', (e as Error).message);
+                setIsActing(false);
+              }
+            },
+          },
+        ],
+      );
+      return;
     }
-  };
 
-  const handleSessionTap = (session: Session): void => {
-    if (isActive(session)) {
-      navigation.navigate('ActiveSession', { sessionId: session.id });
-    } else {
-      navigation.navigate('SessionDetail', { sessionId: session.id });
-    }
-  };
+    // No active session — create directly
+    setIsActing(true);
+    startNewSession()
+      .then(session => navigation.navigate('ActiveSession', { sessionId: session.id }))
+      .catch(e => {
+        Alert.alert('Error', (e as Error).message);
+        setIsActing(false);
+      });
+  }, [user, sessions, startNewSession, navigation]);
+
+  // ── Copy Selected ───────────────────────────────────────────────────────────
+
+  const handleCopySelected = useCallback((): void => {
+    if (!user || !selectedSession || isActive(selectedSession)) return;
+
+    setIsActing(true);
+    inheritLastSession(selectedSession.id)
+      .then(session => navigation.navigate('ActiveSession', { sessionId: session.id }))
+      .catch(e => {
+        Alert.alert('Error', (e as Error).message);
+        setIsActing(false);
+      });
+  }, [user, selectedSession, inheritLastSession, navigation]);
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
     <View style={s.root}>
-      {/* ── Area 1 — Header ── */}
-      <View style={s.header}>
-        <Text style={s.greeting}>Hey, {user?.name ?? 'Athlete'} 👋</Text>
-        <Pressable onPress={logout} hitSlop={12}>
-          <Text style={s.logoutLink}>Log out</Text>
-        </Pressable>
-      </View>
+      {/* ── Area 1: Header ── */}
+      <HubHeader
+        userName={user?.name ?? 'Athlete'}
+        selectedSession={selectedSession}
+        onLogout={logout}
+      />
 
-      {/* Display data loading error if any */}
-      {dataLoadingError && (
-        <View style={s.errorContainer}>
-          <Text style={s.errorText}>Error loading data: {dataLoadingError}</Text>
-        </View>
-      )}
+      {/* ── Area 2: Session list ── */}
+      <ScrollView
+        style={s.list}
+        contentContainerStyle={s.listContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {sessions.map(session => (
+          <HubSessionItem
+            key={session.id}
+            session={session}
+            isSelected={selectedSession?.id === session.id}
+            onSelect={() => selectSession(session.id)}
+            onNavigate={() => handleNavigate(session.id, isActive(session))}
+            onDelete={() => handleDelete(session.id, isActive(session))}
+          />
+        ))}
+      </ScrollView>
 
-      {/* ── Area 2 — Session list ── */}
-      <View style={s.listArea}>
-        <SessionListArea
-          isLoading={isLoading}
-          activeSession={data?.activeSession ?? null}
-          finishedSessions={data?.finishedSessions ?? []}
-          onSessionTap={handleSessionTap}
-          theme={theme}
-        />
-      </View>
-
-      {/* Display action error if any */}
-      {actionError && (
-        <View style={s.errorContainer}>
-          <Text style={s.errorText}>Action failed: {actionError}</Text>
-        </View>
-      )}
-
-      {/* ── Area 3 — Actions ── */}
-      <View style={s.actionArea}>
-        <SessionActionArea
-          isActing={isActing}
-          activeSession={data?.activeSession ?? null}
-          finishedSessionsCount={data?.finishedSessions.length ?? 0}
-          onContinue={handleContinue}
-          onFinishAndContinue={handleFinishAndContinue}
-          onCreateCopy={handleCreateCopy}
-          onCreateNew={handleCreateNew}
-        />
-      </View>
+      {/* ── Area 3: Action area ── */}
+      <HubActionArea
+        selectedSession={selectedSession}
+        hasAnySessions={sessions.length > 0}
+        isActing={isLoading || isActing}
+        onContinue={handleContinue}
+        onCopySelected={handleCopySelected}
+        onCreateNew={handleCreateNew}
+      />
     </View>
   );
 };
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
-const styles = (theme: AppTheme): ReturnType<typeof StyleSheet.create> =>
+const styles = (): ReturnType<typeof StyleSheet.create> =>
   StyleSheet.create({
     root: {
       flex: 1,
-      backgroundColor: theme.background,
     },
-
-    // Area 1 — header
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: 24,
-      paddingTop: 56,
-      paddingBottom: 16,
-      borderBottomWidth: 0.5,
-      borderBottomColor: theme.border,
+    list: {
+      flex: 1,
     },
-    greeting: {
-      fontSize: 20,
-      fontWeight: '700',
-      color: theme.textPrimary,
+    listContent: {
+      paddingHorizontal: 16,
+      paddingTop: 12,
+      paddingBottom: 8,
     },
-    logoutLink: {
-      fontSize: 13,
-      color: theme.textMuted,
-    },
-    errorContainer: {
-      paddingHorizontal: 24,
-      paddingVertical: 8,
-      backgroundColor: theme.surface, // Or a specific error background color
-      borderBottomWidth: 0.5,
-      borderBottomColor: theme.border,
-    },
-    errorText: {
-      color: theme.danger,
-      fontSize: 13,
-      textAlign: 'center',
-    },
-    listArea: { flex: 3 },
-    actionArea: { flex: 2 },
   });
