@@ -124,7 +124,7 @@ export const SessionHubScreen: React.FC<SessionHubScreenProps> = ({ navigation }
       return;
     }
 
-    // No active session — create directly
+    // The session is not active — create directly
     setIsActing(true);
     startNewSession()
       .then(session => navigation.navigate('ActiveSession', { sessionId: session.id }))
@@ -136,8 +136,35 @@ export const SessionHubScreen: React.FC<SessionHubScreenProps> = ({ navigation }
 
   // ── Copy Selected ───────────────────────────────────────────────────────────
 
-  const handleCopySelected = useCallback((): void => {
-    if (!user || !selectedSession || isActive(selectedSession)) return;
+  const handleInheritSelected = useCallback((): void => {
+    if (!user || !selectedSession) return;
+
+    // If active session exists — ask to finish it first
+    const activeSession = sessions.find(s => isActive(s));
+    if (activeSession) {
+      Alert.alert(
+        'Parent session is active and in progress',
+        'You must finish your active session before starting a new one.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Finish & Inherit',
+            onPress: async (): Promise<void> => {
+              setIsActing(true);
+              try {
+                await serviceLocator.finishSession.execute(activeSession.id);
+                const session = await inheritLastSession(selectedSession.id);
+                navigation.navigate('ActiveSession', { sessionId: session.id });
+              } catch (e) {
+                Alert.alert('Error', (e as Error).message);
+                setIsActing(false);
+              }
+            },
+          },
+        ],
+      );
+      return;
+    }
 
     setIsActing(true);
     inheritLastSession(selectedSession.id)
@@ -146,7 +173,7 @@ export const SessionHubScreen: React.FC<SessionHubScreenProps> = ({ navigation }
         Alert.alert('Error', (e as Error).message);
         setIsActing(false);
       });
-  }, [user, selectedSession, inheritLastSession, navigation]);
+  }, [user, selectedSession, sessions, inheritLastSession, navigation]);
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
@@ -179,7 +206,7 @@ export const SessionHubScreen: React.FC<SessionHubScreenProps> = ({ navigation }
         hasAnySessions={sessions.length > 0}
         isActing={isLoading || isActing}
         onContinue={handleContinue}
-        onCopySelected={handleCopySelected}
+        onInheritSelected={handleInheritSelected}
         onCreateNew={handleCreateNew}
       />
     </View>
