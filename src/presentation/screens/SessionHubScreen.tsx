@@ -152,11 +152,7 @@ export const SessionHubScreen: React.FC<SessionHubScreenProps> = ({ navigation }
   return (
     <View style={s.root}>
       {/* ── Area 1: Header ── */}
-      <HubHeader
-        userName={user?.name ?? 'Athlete'}
-        selectedSession={selectedSession}
-        onLogout={logout}
-      />
+      <HubHeader userName={user?.name ?? 'User'} onLogout={logout} />
 
       {/* ── Area 2: Session list ── */}
       <ScrollView

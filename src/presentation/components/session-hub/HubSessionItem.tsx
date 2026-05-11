@@ -36,51 +36,43 @@ export const HubSessionItem: React.FC<HubSessionItemProps> = ({
   const s = styles(theme, active, isSelected);
 
   return (
-    <Pressable
-      style={({ pressed }) => [s.item, pressed && !isSelected && s.itemPressed]}
-      onPress={onSelect}
-    >
-      {/* Left — session info */}
-      <View style={s.left}>
-        {/* Status pill */}
-        <View style={s.pill}>
-          {active && <View style={s.pillDot} />}
-          <Text style={s.pillLabel}>{active ? 'Active' : 'Finished'}</Text>
+    <View style={s.row}>
+      {/* Card — item body + chevron inside */}
+      <Pressable
+        style={({ pressed }) => [s.item, pressed && !isSelected && s.itemPressed]}
+        onPress={onSelect}
+      >
+        {isSelected && <View style={s.accentBar} />}
+
+        <View style={s.left}>
+          <View style={s.pill}>
+            {active && <View style={s.pillDot} />}
+            <Text style={s.pillLabel}>{active ? 'Active' : 'Finished'}</Text>
+          </View>
+          <Text style={s.label} numberOfLines={1}>
+            {session.label ?? 'Session'}
+          </Text>
+          <Text style={s.meta}>
+            {formatDate(session.createdAt)} · {session.exercises.length}{' '}
+            {session.exercises.length === 1 ? 'exercise' : 'exercises'}
+          </Text>
         </View>
 
-        {/* Label */}
-        <Text style={s.label} numberOfLines={1}>
-          {session.label ?? 'Session'}
-        </Text>
-
-        {/* Date + exercise count */}
-        <Text style={s.meta}>
-          {formatDate(session.createdAt)} · {session.exercises.length}{' '}
-          {session.exercises.length === 1 ? 'exercise' : 'exercises'}
-        </Text>
-      </View>
-
-      {/* Right — action buttons */}
-      <View style={s.btns}>
-        {/* Navigate button ··· */}
-        <Pressable
-          style={({ pressed }) => [s.btn, s.btnNav, pressed && s.btnPressed]}
-          onPress={onNavigate}
-          hitSlop={6}
-        >
-          <Text style={s.btnNavLabel}>···</Text>
+        <Pressable onPress={onNavigate} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <View style={s.chevronCircle}>
+            <Text style={s.chevron}>›</Text>
+          </View>
         </Pressable>
+      </Pressable>
 
-        {/* Delete button ✕ */}
-        <Pressable
-          style={({ pressed }) => [s.btn, s.btnDel, pressed && s.btnPressed]}
-          onPress={onDelete}
-          hitSlop={6}
-        >
-          <Text style={s.btnDelLabel}>✕</Text>
-        </Pressable>
-      </View>
-    </Pressable>
+      <Pressable
+        onPress={onDelete}
+        style={s.trashBtn}
+        hitSlop={{ top: 12, bottom: 12, left: 8, right: 16 }}
+      >
+        <Text style={s.trash}>🗑</Text>
+      </Pressable>
+    </View>
   );
 };
 
@@ -92,28 +84,43 @@ const styles = (
   isSelected: boolean,
 ): ReturnType<typeof StyleSheet.create> =>
   StyleSheet.create({
-    item: {
+    // Outer row — card + trash side by side
+    row: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: isSelected ? (active ? '#0A1F14' : '#141420') : theme.surface,
+      marginBottom: 6,
+      gap: 10,
+    },
+
+    item: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.surface,
       borderWidth: isSelected ? 1 : 0.5,
       borderColor: isSelected ? (active ? theme.accent : '#534AB7') : theme.border,
       borderRadius: 12,
       padding: 12,
-      marginBottom: 6,
+      overflow: 'hidden',
+    },
+    accentBar: {
+      position: 'absolute',
+      left: 0,
+      top: 0,
+      bottom: 0,
+      width: 3,
+      borderRadius: 12,
+      backgroundColor: active ? theme.accent : '#534AB7',
     },
     itemPressed: {
       opacity: 0.75,
     },
 
-    // Left content
     left: {
       flex: 1,
       gap: 2,
       marginRight: 8,
     },
-
-    // Status pill
     pill: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -138,8 +145,6 @@ const styles = (
       textTransform: 'uppercase',
       color: active ? '#9FE1CB' : theme.textSecondary,
     },
-
-    // Text
     label: {
       fontSize: 13,
       fontWeight: '600',
@@ -149,41 +154,25 @@ const styles = (
       fontSize: 11,
       color: theme.textSecondary,
     },
-
-    // Right buttons
-    btns: {
-      flexDirection: 'row',
-      gap: 6,
-      flexShrink: 0,
+    chevron: {
+      fontSize: 22,
+      color: isSelected ? theme.accent : theme.textSecondary,
+      lineHeight: 26,
     },
-    btn: {
-      width: 30,
-      height: 30,
-      borderRadius: 8,
+    chevronCircle: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: isSelected ? (active ? '#1A3010' : '#1E1A3A') : theme.border,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    btnNav: {
-      backgroundColor: theme.surface,
-      borderWidth: 0.5,
-      borderColor: theme.border,
+    trashBtn: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: 24,
     },
-    btnNavLabel: {
-      fontSize: 12,
-      color: theme.textSecondary,
-      letterSpacing: 1,
-      lineHeight: 14,
-    },
-    btnDel: {
-      backgroundColor: theme.surface,
-      borderWidth: 0.5,
-      borderColor: '#3C2020',
-    },
-    btnDelLabel: {
-      fontSize: 11,
-      color: theme.danger,
-    },
-    btnPressed: {
-      opacity: 0.6,
+    trash: {
+      fontSize: 16,
     },
   });

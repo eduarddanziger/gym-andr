@@ -1,38 +1,19 @@
 import React from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Session, isActive } from '@domain/session/Session';
 import { AppTheme, useTheme } from '@presentation/theme';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-const formatTime = (date: Date): string =>
-  new Date(date).toLocaleTimeString(undefined, {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
-
-const buildSessionLine = (session: Session): string => {
-  const label = session.label ?? 'Session';
-  const start = formatTime(session.createdAt);
-  if (isActive(session)) {
-    return `${label}: ${start} →`;
-  }
-  const end = session.finishedAt ? formatTime(session.finishedAt) : '';
-  return `${label}: ${start} – ${end}`;
-};
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 interface HubHeaderProps {
   userName: string;
-  selectedSession: Session | null;
   onLogout: () => void;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export const HubHeader: React.FC<HubHeaderProps> = ({ userName, selectedSession, onLogout }) => {
+export const HubHeader: React.FC<HubHeaderProps> = ({ userName, onLogout }) => {
   const theme = useTheme();
   const s = styles(theme);
 
@@ -46,21 +27,10 @@ export const HubHeader: React.FC<HubHeaderProps> = ({ userName, selectedSession,
   return (
     <View style={s.header}>
       <View style={s.textBlock}>
-        {selectedSession ? (
-          <>
-            <Text style={s.userName} numberOfLines={1}>
-              {userName}
-            </Text>
-            <Text
-              style={[s.sessionLine, isActive(selectedSession) && s.sessionLineActive]}
-              numberOfLines={1}
-            >
-              {buildSessionLine(selectedSession)}
-            </Text>
-          </>
-        ) : (
+        <View style={s.nameRow}>
+          <Text style={s.userIcon}>👤</Text>
           <Text style={s.userName}>{userName}</Text>
-        )}
+        </View>
       </View>
 
       <Pressable
@@ -123,5 +93,13 @@ const styles = (theme: AppTheme): ReturnType<typeof StyleSheet.create> =>
       fontSize: 18,
       color: theme.textSecondary,
       lineHeight: 22,
+    },
+    nameRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    userIcon: {
+      fontSize: 14,
     },
   });
