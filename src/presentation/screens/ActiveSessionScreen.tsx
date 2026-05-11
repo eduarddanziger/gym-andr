@@ -2,14 +2,14 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { elapsedSeconds } from '@domain/session/Exercise';
@@ -19,8 +19,6 @@ import { AppTheme, useTheme } from '@presentation/theme';
 import { ActiveSessionScreenProps } from '@presentation/navigation/types';
 
 // ── Suggestion pool ───────────────────────────────────────────────────────────
-// Random suggestion shown as pre-filled placeholder with '?' suffix.
-// Stripped before API call if still present.
 
 const SUGGESTIONS = [
   'Bench Press',
@@ -75,22 +73,12 @@ export const ActiveSessionScreen: React.FC<ActiveSessionScreenProps> = ({ route,
     renameSession,
   } = useSession();
 
-  // ── Selection state ───────────────────────────────────────────────────────
-  // null = nothing selected
-  // 'new' = New draft row is selected
-  // string = exerciseId of existing exercise
   const [selectedId, setSelectedId] = useState<string | 'new' | null>(null);
-
-  // ── New exercise draft ────────────────────────────────────────────────────
   const [draft, setDraft] = useState<NewExerciseDraft | null>(null);
   const nameInputRef = useRef<TextInput>(null);
-
-  // ── Inline rename ─────────────────────────────────────────────────────────
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState('');
   const titleInputRef = useRef<TextInput>(null);
-
-  // ── Timer ─────────────────────────────────────────────────────────────────
   const [, setTick] = useState(0);
 
   // ── Load session ──────────────────────────────────────────────────────────
@@ -100,26 +88,23 @@ export const ActiveSessionScreen: React.FC<ActiveSessionScreenProps> = ({ route,
     }
   }, [sessionId, currentSession?.id, restoreSession]);
 
-  // ── Timer tick ────────────────────────────────────────────────────────────
+  // ── Timer tick — fix: primitive dep, not object ───────────────────────────
   const runningExercise = currentSession?.exercises.find(e => isRunning(e.status));
 
   useEffect(() => {
     if (!runningExercise) return;
     const interval = setInterval(() => setTick(t => t + 1), 1000);
-    return (): void => {
-      clearInterval(interval);
-    };
-  }, [runningExercise]);
+    return (): void => clearInterval(interval);
+  }, [runningExercise?.id, runningExercise]);
 
-  // Auto-select running exercise on load
+  // ── Auto-select running exercise ──────────────────────────────────────────
   useEffect(() => {
     if (runningExercise && selectedId === null) {
       setSelectedId(runningExercise.id);
     }
-  }, [runningExercise, sessionId, selectedId]);
+  }, [runningExercise?.id, selectedId, runningExercise]);
 
   // ── Sorted exercise list ──────────────────────────────────────────────────
-  // New (draft) always on top, then Running, Pending, Finished
   const sortedExercises = currentSession
     ? [...currentSession.exercises].sort((a, b) => {
         const order = { Running: 0, Pending: 1, Finished: 2 };
@@ -127,22 +112,17 @@ export const ActiveSessionScreen: React.FC<ActiveSessionScreenProps> = ({ route,
       })
     : [];
 
-  // ── Item tap handler ──────────────────────────────────────────────────────
+  // ── Item tap ──────────────────────────────────────────────────────────────
   const handleItemTap = useCallback(
     (exerciseId: string): void => {
       if (selectedId === exerciseId) return;
 
-      // If New draft exists and user taps another item — confirm drop
       if (draft !== null && selectedId === 'new') {
         Alert.alert(
           'Drop new exercise?',
           'You have an unsaved exercise. Drop it and select the tapped one?',
           [
-            {
-              text: 'Keep editing',
-              style: 'cancel',
-              // no-op — selection stays on 'new'
-            },
+            { text: 'Keep editing', style: 'cancel' },
             {
               text: 'Drop it',
               style: 'destructive',
@@ -161,11 +141,10 @@ export const ActiveSessionScreen: React.FC<ActiveSessionScreenProps> = ({ route,
     [selectedId, draft],
   );
 
-  // ── Add new exercise ──────────────────────────────────────────────────────
+  // ── Add new ───────────────────────────────────────────────────────────────
   const handleAddNew = useCallback((): void => {
     if (draft !== null || runningExercise) return;
-    const newDraft = makeDraft();
-    setDraft(newDraft);
+    setDraft(makeDraft());
     setSelectedId('new');
     setTimeout(() => nameInputRef.current?.focus(), 50);
   }, [draft, runningExercise]);
@@ -184,20 +163,15 @@ export const ActiveSessionScreen: React.FC<ActiveSessionScreenProps> = ({ route,
     }
   }, []);
 
-  // ── Start exercise (new or pending) ──────────────────────────────────────
+  // ── Start exercise ────────────────────────────────────────────────────────
   const handleStart = useCallback(async (): Promise<void> => {
     if (!currentSession) return;
 
     if (selectedId === 'new' && draft) {
-      // New exercise — strip '?' if suggestion not replaced
       const name = stripSuggestionMark(draft.name);
       if (!name) return;
-
       try {
-        await addExercise({
-          autoLabel: name,
-          photoUrl: draft.photoUri ?? undefined,
-        });
+        await addExercise({ autoLabel: name, photoUrl: draft.photoUri ?? undefined });
         setDraft(null);
         setSelectedId(null);
       } catch {
@@ -207,7 +181,6 @@ export const ActiveSessionScreen: React.FC<ActiveSessionScreenProps> = ({ route,
     }
 
     if (selectedId && selectedId !== 'new') {
-      // Existing pending exercise
       try {
         await startExercise(selectedId);
       } catch {
@@ -294,7 +267,9 @@ export const ActiveSessionScreen: React.FC<ActiveSessionScreenProps> = ({ route,
     );
   }
 
-  // ── Derived state for action area ─────────────────────────────────────────
+  // ── Derived state ─────────────────────────────────────────────────────────
+  const sessionLabel = currentSession.label ?? 'Session';
+
   const selectedExercise =
     selectedId && selectedId !== 'new'
       ? currentSession.exercises.find(e => e.id === selectedId)
@@ -312,14 +287,8 @@ export const ActiveSessionScreen: React.FC<ActiveSessionScreenProps> = ({ route,
   const canFinish = isSelectedRunning;
   const canDelete = (isSelectedPending || isSelectedDone) && !isSelectedRunning;
 
-  const sessionLabel = currentSession.label ?? 'Session';
-
   return (
-    <KeyboardAvoidingView
-      style={s.root}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={0}
-    >
+    <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       {/* ── Area 1: Header ── */}
       <View style={s.header}>
         <Pressable style={s.backBtn} hitSlop={12} onPress={() => navigation.navigate('SessionHub')}>
@@ -366,6 +335,8 @@ export const ActiveSessionScreen: React.FC<ActiveSessionScreenProps> = ({ route,
         {/* New draft row — always on top */}
         {draft && (
           <Pressable style={[s.exItem, s.exNew]} onPress={() => setSelectedId('new')}>
+            {/* Accent bar */}
+            <View style={[s.accentBar, { backgroundColor: '#534AB7' }]} />
             <View style={s.exLeft}>
               <View style={[s.pill, s.pillNew]}>
                 <Text style={s.pillNewLabel}>New</Text>
@@ -397,6 +368,13 @@ export const ActiveSessionScreen: React.FC<ActiveSessionScreenProps> = ({ route,
               ]}
               onPress={() => handleItemTap(exercise.id)}
             >
+              {/* Accent bar — shown when selected */}
+              {selected && (
+                <View
+                  style={[s.accentBar, { backgroundColor: running ? theme.accent : '#534AB7' }]}
+                />
+              )}
+
               <View style={s.exLeft}>
                 <View style={[s.pill, running ? s.pillRun : done ? s.pillDone : s.pillPend]}>
                   {running && <View style={s.pillDot} />}
@@ -429,30 +407,34 @@ export const ActiveSessionScreen: React.FC<ActiveSessionScreenProps> = ({ route,
 
       {/* ── Area 3: Action area ── */}
       <View style={s.actionArea}>
+        <Text style={s.actionAreaLabel}>Actions</Text>
+
         {error ? <Text style={s.errorText}>{error}</Text> : null}
 
-        {/* Name input + photo — shown when New is selected */}
+        {/* Input row — shown when New is selected */}
         {isSelectedNew && draft && (
-          <View style={s.inputRow}>
-            <TextInput
-              ref={nameInputRef}
-              style={[
-                s.nameInput,
-                isSuggestionName(draft.name) ? s.nameInputSuggestion : s.nameInputLime,
-              ]}
-              value={draft.name}
-              onChangeText={name => setDraft(d => (d ? { ...d, name } : d))}
-              returnKeyType="done"
-              maxLength={80}
-              selectTextOnFocus
-            />
-            <Pressable
-              style={[s.photoBtn, draft.photoUri && s.photoBtnFilled]}
-              onPress={handlePickPhoto}
-            >
-              <Text>{draft.photoUri ? '🖼️' : '📷'}</Text>
-            </Pressable>
-          </View>
+          <>
+            <View style={s.inputRow}>
+              <TextInput
+                ref={nameInputRef}
+                style={[
+                  s.nameInput,
+                  isSuggestionName(draft.name) ? s.nameInputSuggestion : s.nameInputLime,
+                ]}
+                value={draft.name}
+                onChangeText={name => setDraft(d => (d ? { ...d, name } : d))}
+                returnKeyType="done"
+                maxLength={80}
+                selectTextOnFocus
+              />
+              <Pressable
+                style={[s.photoBtn, draft.photoUri && s.photoBtnFilled]}
+                onPress={handlePickPhoto}
+              >
+                <Text>{draft.photoUri ? '🖼️' : '📷'}</Text>
+              </Pressable>
+            </View>
+          </>
         )}
 
         {/* Primary action row */}
@@ -487,7 +469,7 @@ export const ActiveSessionScreen: React.FC<ActiveSessionScreenProps> = ({ route,
             </Pressable>
           )}
 
-          {/* Trash icon for Pending or Done */}
+          {/* Trash — Pending or Done only */}
           {canDelete && selectedExercise && (
             <Pressable
               style={({ pressed }) => [s.btnTrash, pressed && s.pressed]}
@@ -497,7 +479,7 @@ export const ActiveSessionScreen: React.FC<ActiveSessionScreenProps> = ({ route,
             </Pressable>
           )}
 
-          {/* Add New button */}
+          {/* Add New */}
           {!isSelectedNew && !canFinish && (
             <Pressable
               style={({ pressed }) => [
@@ -513,7 +495,7 @@ export const ActiveSessionScreen: React.FC<ActiveSessionScreenProps> = ({ route,
           )}
         </View>
 
-        {/* Finish session — always at bottom */}
+        {/* Finish session */}
         <Pressable
           style={({ pressed }) => [s.btnFinishSession, pressed && s.pressed]}
           onPress={handleFinishSession}
@@ -553,7 +535,7 @@ const styles = (theme: AppTheme): ReturnType<typeof StyleSheet.create> =>
       alignItems: 'center',
       paddingTop: 52,
       paddingBottom: 12,
-      paddingHorizontal: 16,
+      paddingHorizontal: 16, // ← was 16, consistent ✅
       borderBottomWidth: 0.5,
       borderBottomColor: theme.border,
     },
@@ -592,22 +574,28 @@ const styles = (theme: AppTheme): ReturnType<typeof StyleSheet.create> =>
 
     // List
     list: { flex: 1, minHeight: 80 },
-    listContent: { paddingHorizontal: 14, paddingTop: 10, paddingBottom: 8, gap: 5 },
+    listContent: {
+      paddingHorizontal: 16, // ← was 14, now matches SessionHub ✅
+      paddingTop: 10,
+      paddingBottom: 8,
+      gap: 5,
+    },
     emptyList: { fontSize: 13, color: theme.textMuted, textAlign: 'center', marginTop: 32 },
 
     // Exercise items
     exItem: {
-      borderRadius: 11,
+      borderRadius: 12, // ← was 11, now matches SessionHub ✅
       padding: 11,
       flexDirection: 'row',
       alignItems: 'center',
       borderWidth: 0.5,
+      overflow: 'hidden', // ← needed for accent bar + borderRadius
     },
     exRunning: { backgroundColor: '#0A1F14', borderColor: theme.accent },
     exPending: { backgroundColor: theme.surface, borderColor: theme.border },
-    exPendingSel: { backgroundColor: '#141420', borderColor: '#534AB7' },
+    exPendingSel: { backgroundColor: theme.surface, borderColor: '#534AB7' }, // ← no dark tint, accent bar handles it
     exDone: { backgroundColor: theme.surface, borderColor: theme.surface, opacity: 0.5 },
-    exNew: { backgroundColor: '#141420', borderColor: '#534AB7', borderStyle: 'dashed' },
+    exNew: { backgroundColor: theme.surface, borderColor: '#534AB7', borderStyle: 'dashed' },
     exLeft: { flex: 1, gap: 2 },
     exName: { fontSize: 14, fontWeight: '500', color: theme.textPrimary },
     exNameMuted: { color: theme.textMuted, fontWeight: '400' },
@@ -621,6 +609,16 @@ const styles = (theme: AppTheme): ReturnType<typeof StyleSheet.create> =>
       fontVariant: ['tabular-nums'],
     },
     exDuration: { fontSize: 11, color: theme.textMuted, fontVariant: ['tabular-nums'] },
+
+    // Accent bar — left strip, mirrors SessionHub HubSessionItem
+    accentBar: {
+      position: 'absolute',
+      left: 0,
+      top: 0,
+      bottom: 0,
+      width: 3,
+      borderRadius: 12,
+    },
 
     // Pills
     pill: {
@@ -670,10 +668,19 @@ const styles = (theme: AppTheme): ReturnType<typeof StyleSheet.create> =>
     actionArea: {
       borderTopWidth: 0.5,
       borderTopColor: theme.border,
-      paddingHorizontal: 14,
+      paddingHorizontal: 20, // ← was 14, now matches HubActionArea ✅
       paddingTop: 12,
       paddingBottom: 28,
       gap: 8,
+    },
+    actionAreaLabel: {
+      // ← new, matches SessionHub area labels ✅
+      fontSize: 10,
+      fontWeight: '600',
+      letterSpacing: 1.2,
+      textTransform: 'uppercase',
+      color: theme.textMuted,
+      marginBottom: 2,
     },
 
     // Input row
@@ -708,8 +715,8 @@ const styles = (theme: AppTheme): ReturnType<typeof StyleSheet.create> =>
     btnPrimary: {
       flex: 1,
       backgroundColor: theme.accent,
-      borderRadius: 10,
-      paddingVertical: 12,
+      borderRadius: 14, // ← was 10, now matches HubActionArea ✅
+      paddingVertical: 13,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -719,8 +726,8 @@ const styles = (theme: AppTheme): ReturnType<typeof StyleSheet.create> =>
       backgroundColor: theme.surface,
       borderWidth: 1,
       borderColor: '#BA7517',
-      borderRadius: 10,
-      paddingVertical: 12,
+      borderRadius: 14, // ← was 10 ✅
+      paddingVertical: 13,
       alignItems: 'center',
     },
     btnWarningLabel: { fontSize: 13, fontWeight: '600', color: '#FAC775' },
@@ -729,18 +736,18 @@ const styles = (theme: AppTheme): ReturnType<typeof StyleSheet.create> =>
       backgroundColor: theme.surface,
       borderWidth: 0.5,
       borderColor: theme.border,
-      borderRadius: 10,
-      paddingVertical: 12,
+      borderRadius: 14, // ← was 10 ✅
+      paddingVertical: 13,
       alignItems: 'center',
     },
     btnSecondaryLabel: { fontSize: 14, fontWeight: '500', color: theme.textPrimary },
     btnTrash: {
-      width: 42,
-      height: 42,
+      width: 46,
+      height: 46,
       backgroundColor: theme.surface,
       borderWidth: 0.5,
       borderColor: theme.danger,
-      borderRadius: 10,
+      borderRadius: 14, // ← was 10 ✅
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -751,7 +758,7 @@ const styles = (theme: AppTheme): ReturnType<typeof StyleSheet.create> =>
       backgroundColor: theme.surface,
       borderWidth: 0.5,
       borderColor: theme.border,
-      borderRadius: 10,
+      borderRadius: 14, // ← was 10 ✅
       paddingVertical: 10,
       alignItems: 'center',
     },
