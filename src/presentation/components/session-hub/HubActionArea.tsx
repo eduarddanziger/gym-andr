@@ -39,7 +39,6 @@ export const HubActionArea: React.FC<HubActionAreaProps> = ({
   if (!hasAnySessions) {
     return (
       <View style={s.area}>
-        <Text style={s.areaLabel}>Actions</Text>
         <Pressable
           style={({ pressed }) => [s.btnPrimary, pressed && s.pressed]}
           onPress={onCreateNew}
@@ -55,7 +54,6 @@ export const HubActionArea: React.FC<HubActionAreaProps> = ({
   if (selectedSession && isActive(selectedSession)) {
     return (
       <View style={s.area}>
-        <Text style={s.areaLabel}>Actions</Text>
         <Pressable
           style={({ pressed }) => [s.btnPrimary, pressed && s.pressed]}
           onPress={onContinue}
@@ -86,7 +84,6 @@ export const HubActionArea: React.FC<HubActionAreaProps> = ({
     const copyHint = selectedSession.label ?? 'selected session';
     return (
       <View style={s.area}>
-        <Text style={s.areaLabel}>Actions</Text>
         <Pressable
           style={({ pressed }) => [s.btnPrimary, pressed && s.pressed]}
           onPress={onInheritSelected}
@@ -110,7 +107,6 @@ export const HubActionArea: React.FC<HubActionAreaProps> = ({
   // ── Has sessions but nothing selected (shouldn't happen — safety fallback) ──
   return (
     <View style={s.area}>
-      <Text style={s.areaLabel}>Actions</Text>
       <Pressable
         style={({ pressed }) => [s.btnSecondary, pressed && s.pressed]}
         onPress={onCreateNew}
