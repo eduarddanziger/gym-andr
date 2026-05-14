@@ -95,14 +95,15 @@ export const ActiveSessionScreen: React.FC<ActiveSessionScreenProps> = ({ route,
     if (!runningExercise) return;
     const interval = setInterval(() => setTick(t => t + 1), 1000);
     return (): void => clearInterval(interval);
-  }, [runningExercise?.id, runningExercise]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runningExercise?.id]); // intentionally only id, because it is enough
 
   // ── Auto-select running exercise ──────────────────────────────────────────
   useEffect(() => {
     if (runningExercise && selectedId === null) {
       setSelectedId(runningExercise.id);
     }
-  }, [runningExercise?.id, selectedId, runningExercise]);
+  }, [runningExercise, selectedId]);
 
   // ── Sorted exercise list ──────────────────────────────────────────────────
   const sortedExercises = currentSession
